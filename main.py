@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from example import Ui_MainWindow  # Remplacez 'example' par le nom de votre fichier généré
+from app import Ui_MainWindow  # Remplacez 'example' par le nom de votre fichier généré
 
 class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
