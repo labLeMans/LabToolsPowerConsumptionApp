@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from nom_du_fichier import Ui_MainWindow  # Assurez-vous que le nom de la classe correspond à celui généré par pyuic5
+from app.py import Ui_MainWindow  # Assurez-vous que le nom de la classe correspond à celui généré par pyuic5
 
 class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
