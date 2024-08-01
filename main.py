@@ -1,11 +1,11 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from app import Ui_MainWindow  # Remplacez 'example' par le nom de votre fichier généré
+from PyQt5 import uic
 
-class MyApp(QMainWindow, Ui_MainWindow):
+class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        uic.loadUi('app.ui', self)  # Charge le fichier .ui directement
         self.pushButton.clicked.connect(self.on_click)
 
     def on_click(self):
