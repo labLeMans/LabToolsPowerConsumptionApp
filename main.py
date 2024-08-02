@@ -1,18 +1,24 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog
 from PyQt5 import uic
 
-class MyApp(QMainWindow):
+class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi('app.ui', self)  # Charge le fichier .ui directement
-        self.pushButton.clicked.connect(self.on_click)
+        uic.loadUi('main.ui', self)
+        self.openButton.clicked.connect(self.show_second_window)
 
-    def on_click(self):
-        print("Button clicked!")
+    def show_second_window(self):
+        self.second_window = SecondApp()
+        self.second_window.show()
+
+class SecondApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi('second.ui', self)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = MyApp()
-    window.show()
+    main_window = MainApp()
+    main_window.show()
     sys.exit(app.exec_())
