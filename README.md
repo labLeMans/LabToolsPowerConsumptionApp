@@ -12,4 +12,7 @@ designer
 pyuic5 -o nom_du_fichier.py nom_du_fichier.ui
 ## Créer l'éxécutable:
 pyinstaller --onefile main.py
+## Créer un environement
+python3 -m venv myenv
+source myenv\Scripts\avtivate
 
