@@ -14,5 +14,5 @@ pyuic5 -o nom_du_fichier.py nom_du_fichier.ui
 pyinstaller --onefile main.py
 ## Créer un environement
 python3 -m venv myenv
-source myenv\Scripts\avtivate
+source myenv/bin/avtivate
 
