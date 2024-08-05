@@ -44,7 +44,8 @@ class SecondApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
-        self.ecoModecomboBox.currentIndexChanged.connect(self.update_label_from_combobox)
+        self.pushStartButton.clicked.connect(self.update_label_from_combobox)
+        self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
         """Met à jour les éléments de la fenêtre secondaire en fonction des états des CheckBox."""
@@ -79,18 +80,23 @@ class SecondApp(QMainWindow):
             self.ecoModecomboBox.addItem("Low Battery")
 
     def add_no_fullpower_items(self, lowbattery):
-        """Ajoute les éléments de la ComboBox lorsque le mode 'fullpower' est activé."""
+        """Ajoute les éléments de la ComboBox lorsque le mode 'fullpower' est désactivé."""
         self.ecoModecomboBox.addItem("OFF")
         self.ecoModecomboBox.addItem("Sleep")
         self.ecoModecomboBox.addItem("ECO 0")
         if lowbattery:
             self.ecoModecomboBox.addItem("Low Battery")
 
-    
+    def save_selected_item(self):
+        """Sauvegarde l'élément sélectionné dans la ComboBox."""
+        self.selected_item = self.ecoModecomboBox.currentText()
+
     def update_label_from_combobox(self):
-        """Met à jour le QLabel avec le texte de l'élément sélectionné dans la ComboBox."""
-        selected_item = self.ecoModecomboBox.currentText()
-        self.selectedItemLabel.setText(f"Selected: {selected_item}")
+        """Met à jour le QLabel avec l'élément sélectionné lorsque le bouton 'Push Start' est pressé."""
+        if hasattr(self, 'selected_item'):
+            self.selectedItemLabel.setText(f"Selected: {self.selected_item}")
+        else:
+            self.selectedItemLabel.setText("No item selected")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
