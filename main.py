@@ -44,6 +44,21 @@ class SecondApp(QMainWindow):
             self.lowBatteryLabel.setText("Low Battery")
             self.lowBatteryLight.setPixmap(QtGui.QPixmap('images/red_light.png'))
 
+        # Mettre à jour les éléments de la ComboBox en fonction des états des CheckBox
+        self.update_combobox(states)
+
+    def update_combobox(self, states):
+        self.comboBox.clear()  # Vide la ComboBox avant de la mettre à jour
+        if states['fullpower']:
+            self.comboBox.addItem("Full Power Option 1")
+            self.comboBox.addItem("Full Power Option 2")
+        if states['lowbattery']:
+            self.comboBox.addItem("Low Battery Option 1")
+            self.comboBox.addItem("Low Battery Option 2")
+        if not states['fullpower'] and not states['lowbattery']:
+            self.comboBox.addItem("Default Option 1")
+            self.comboBox.addItem("Default Option 2")
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_window = MainApp()
