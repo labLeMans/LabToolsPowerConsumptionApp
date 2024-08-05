@@ -14,7 +14,7 @@ class MainApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
-        self.pushButton.clicked.connect(self.show_second_window)
+        self.validatePushButton.clicked.connect(self.show_second_window)
 
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
@@ -36,10 +36,15 @@ class SecondApp(QMainWindow):
         super().__init__()
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
+        self.setup_connections()
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
         uic.loadUi('second.ui', self)
+
+    def setup_connections(self):
+        """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
+        self.ecoModecomboBox.currentIndexChanged.connect(self.update_label_from_combobox)
 
     def display_tool_button_states(self, states):
         """Met à jour les éléments de la fenêtre secondaire en fonction des états des CheckBox."""
@@ -60,10 +65,8 @@ class SecondApp(QMainWindow):
         
         if states['fullpower']:
             self.add_fullpower_items(states['lowbattery'])
-        elif not states['fullpower'] and states['lowbattery']:
-            self.add_lowbattery_items()
         else:
-            self.add_basic_items()
+            self.add_no_fullpower_items(states['lowbattery'])
 
     def add_fullpower_items(self, lowbattery):
         """Ajoute les éléments de la ComboBox lorsque le mode 'fullpower' est activé."""
@@ -75,18 +78,19 @@ class SecondApp(QMainWindow):
         if lowbattery:
             self.ecoModecomboBox.addItem("Low Battery")
 
-    def add_lowbattery_items(self):
-        """Ajoute les éléments de la ComboBox lorsque 'fullpower' est désactivé et 'lowbattery' est activé."""
+    def add_no_fullpower_items(self, lowbattery):
+        """Ajoute les éléments de la ComboBox lorsque le mode 'fullpower' est activé."""
         self.ecoModecomboBox.addItem("OFF")
         self.ecoModecomboBox.addItem("Sleep")
         self.ecoModecomboBox.addItem("ECO 0")
-        self.ecoModecomboBox.addItem("Low Battery")
+        if lowbattery:
+            self.ecoModecomboBox.addItem("Low Battery")
 
-    def add_basic_items(self):
-        """Ajoute les éléments de la ComboBox lorsque ni 'fullpower' ni 'lowbattery' ne sont activés."""
-        self.ecoModecomboBox.addItem("OFF")
-        self.ecoModecomboBox.addItem("Sleep")
-        self.ecoModecomboBox.addItem("ECO 0")
+    
+    def update_label_from_combobox(self):
+        """Met à jour le QLabel avec le texte de l'élément sélectionné dans la ComboBox."""
+        selected_item = self.ecoModecomboBox.currentText()
+        self.selectedItemLabel.setText(f"Selected: {selected_item}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
