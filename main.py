@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5 import uic
+from PyQt5 import uic, QtGui
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -31,14 +31,18 @@ class SecondApp(QMainWindow):
     def display_tool_button_states(self, states):
         # Mise à jour de l'affichage en fonction des états des CheckBox
         if states['fullpower']:
-            self.fullPowerLabel.setText("Full Power is ON")
+            self.fullPowerLabel.setText("Full Power")
+            self.fullPowerLight.setPixmap(QtGui.QPixmap('green_light.png'))
         else:
-            self.fullPowerLabel.setText("Full Power is OFF")
+            self.fullPowerLabel.setText("Full Power")
+            self.fullPowerLight.setPixmap(QtGui.QPixmap('red_light.png'))
 
         if states['lowbattery']:
-            self.lowBatteryLabel.setText("Low Battery is ON")
+            self.lowBatteryLabel.setText("Low Battery")
+            self.lowBatteryLight.setPixmap(QtGui.QPixmap('green_light.png'))
         else:
-            self.lowBatteryLabel.setText("Low Battery is OFF")
+            self.lowBatteryLabel.setText("Low Battery")
+            self.lowBatteryLight.setPixmap(QtGui.QPixmap('red_light.png'))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
