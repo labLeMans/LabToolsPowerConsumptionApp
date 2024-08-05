@@ -1,105 +1,94 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5 import uic, QtGui
-
-class MainApp(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.load_ui()
-        self.setup_connections()
-
-    def load_ui(self):
-        """Charge le fichier UI pour la fenêtre principale."""
-        uic.loadUi('main.ui', self)
-
-    def setup_connections(self):
-        """Configure les connexions des signaux et slots."""
-        self.pushButton.clicked.connect(self.show_second_window)
-
-    def show_second_window(self):
-        """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
-        tool_button_states = self.get_tool_button_states()
-        self.second_window = SecondApp(tool_button_states)
-        self.second_window.show()
-        self.close()  # Ferme la fenêtre principale
-
-    def get_tool_button_states(self):
-        """Récupère les états des CheckBox dans la fenêtre principale."""
-        states = {
-            'fullpower': self.FullPowercheckBox.isChecked(),
-            'lowbattery': self.LowBatterycheckBox.isChecked()
-        }
-        return states
-
-class SecondApp(QMainWindow):
-    def __init__(self, tool_button_states):
-        super().__init__()
-        self.load_ui()
-        self.display_tool_button_states(tool_button_states)
-        self.setup_connections()
-
-    def load_ui(self):
-        """Charge le fichier UI pour la fenêtre secondaire."""
-        uic.loadUi('second.ui', self)
-
-    def setup_connections(self):
-        """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
-        self.ecoModecomboBox.currentIndexChanged.connect(self.update_label_from_combobox)
-
-    def display_tool_button_states(self, states):
-        """Met à jour les éléments de la fenêtre secondaire en fonction des états des CheckBox."""
-        self.update_light(self.fullPowerLight, states['fullpower'])
-        self.update_light(self.lowBatteryLight, states['lowbattery'])
-        self.update_ecoModecomboBox(states)
-
-    def update_light(self, label, state):
-        """Met à jour l'image du label en fonction de l'état (vert pour actif, rouge pour inactif)."""
-        if state:
-            label.setPixmap(QtGui.QPixmap('images/green_light.png'))
-        else:
-            label.setPixmap(QtGui.QPixmap('images/red_light.png'))
-
-    def update_ecoModecomboBox(self, states):
-        """Met à jour les éléments de la ComboBox en fonction des états des CheckBox."""
-        self.ecoModecomboBox.clear()  # Vide la ComboBox avant de la mettre à jour
-        
-        if states['fullpower']:
-            self.add_fullpower_items(states['lowbattery'])
-        elif not states['fullpower'] and states['lowbattery']:
-            self.add_lowbattery_items()
-        else:
-            self.add_basic_items()
-
-    def add_fullpower_items(self, lowbattery):
-        """Ajoute les éléments de la ComboBox lorsque le mode 'fullpower' est activé."""
-        self.ecoModecomboBox.addItem("OFF")
-        self.ecoModecomboBox.addItem("Sleep")
-        self.ecoModecomboBox.addItem("ECO 0")
-        self.ecoModecomboBox.addItem("ECO 1")
-        self.ecoModecomboBox.addItem("ECO 2")
-        if lowbattery:
-            self.ecoModecomboBox.addItem("Low Battery")
-
-    def add_lowbattery_items(self):
-        """Ajoute les éléments de la ComboBox lorsque 'fullpower' est désactivé et 'lowbattery' est activé."""
-        self.ecoModecomboBox.addItem("OFF")
-        self.ecoModecomboBox.addItem("Sleep")
-        self.ecoModecomboBox.addItem("ECO 0")
-        self.ecoModecomboBox.addItem("Low Battery")
-
-    def add_basic_items(self):
-        """Ajoute les éléments de la ComboBox lorsque ni 'fullpower' ni 'lowbattery' ne sont activés."""
-        self.ecoModecomboBox.addItem("OFF")
-        self.ecoModecomboBox.addItem("Sleep")
-        self.ecoModecomboBox.addItem("ECO 0")
-
-    def update_label_from_combobox(self):
-        """Met à jour le QLabel avec le texte de l'élément sélectionné dans la ComboBox."""
-        selected_item = self.ecoModecomboBox.currentText()
-        self.selectedItemLabel.setText(f"Selected: {selected_item}")
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    main_window = MainApp()
-    main_window.show()
-    sys.exit(app.exec_())
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QCheckBox" name="FullPowercheckBox">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>190</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Full Power</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="LowBatterycheckBox">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>240</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Low Battery</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="moduleNameLabel">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>140</y>
+      <width>131</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Module Name</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="moduleNameLineEdit">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>140</y>
+      <width>181</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="validatePushButton">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>340</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Validate</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
