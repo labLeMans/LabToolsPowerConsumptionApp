@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import uic
 
 class MainApp(QMainWindow):
@@ -12,14 +12,13 @@ class MainApp(QMainWindow):
         tool_button_states = self.get_tool_button_states()
         self.second_window = SecondApp(tool_button_states)
         self.second_window.show()
-        self.close() # ferme la fenetre principale
+        self.close()  # Ferme la fenêtre principale
 
     def get_tool_button_states(self):
-        #récupération des checkbox full power et low battery
+        # Récupération des états des CheckBox
         states = {
             'fullpower': self.FullPowercheckBox.isChecked(),
             'lowbattery': self.LowBatterycheckBox.isChecked()
-        
         }
         return states
 
@@ -30,9 +29,16 @@ class SecondApp(QMainWindow):
         self.display_tool_button_states(tool_button_states)
 
     def display_tool_button_states(self, states):
-        # Affiche les états de full power et low battery
-        for button, state in state.items():
-            print(f'{button} is {"checked" if state else "unchecked"}')
+        # Mise à jour de l'affichage en fonction des états des CheckBox
+        if states['fullpower']:
+            self.fullPowerLabel.setText("Full Power is ON")
+        else:
+            self.fullPowerLabel.setText("Full Power is OFF")
+
+        if states['lowbattery']:
+            self.lowBatteryLabel.setText("Low Battery is ON")
+        else:
+            self.lowBatteryLabel.setText("Low Battery is OFF")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
