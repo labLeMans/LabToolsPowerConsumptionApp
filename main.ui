@@ -14,59 +14,33 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QCheckBox" name="checkBox">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>190</y>
-      <width>92</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>CheckBox</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="checkBox_2">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>240</y>
-      <width>92</width>
-      <height>23</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>CheckBox</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QCheckBox" name="FullPowercheckBox">
     <property name="geometry">
      <rect>
       <x>30</x>
       <y>190</y>
       <width>131</width>
-      <height>17</height>
+      <height>23</height>
      </rect>
     </property>
     <property name="text">
      <string>Full Power</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_2">
+   <widget class="QCheckBox" name="LowBatterycheckBox">
     <property name="geometry">
      <rect>
       <x>30</x>
       <y>240</y>
       <width>131</width>
-      <height>17</height>
+      <height>23</height>
      </rect>
     </property>
     <property name="text">
      <string>Low Battery</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="moduleNameLabel">
     <property name="geometry">
      <rect>
       <x>30</x>
@@ -79,7 +53,7 @@
      <string>Module Name</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit">
+   <widget class="QLineEdit" name="moduleNameLineEdit">
     <property name="geometry">
      <rect>
       <x>190</x>
@@ -87,6 +61,19 @@
       <width>181</width>
       <height>25</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="validatePushButton">
+    <property name="geometry">
+     <rect>
+      <x>300</x>
+      <y>340</y>
+      <width>89</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Validate</string>
     </property>
    </widget>
   </widget>
