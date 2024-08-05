@@ -44,7 +44,7 @@ class SecondApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
-        self.pushStartButton.clicked.connect(self.update_label_from_combobox)
+        self.startPushButton.clicked.connect(self.update_label_from_combobox)
         self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
@@ -94,9 +94,9 @@ class SecondApp(QMainWindow):
     def update_label_from_combobox(self):
         """Met à jour le QLabel avec l'élément sélectionné lorsque le bouton 'Push Start' est pressé."""
         if hasattr(self, 'selected_item'):
-            self.selectedItemLabel.setText(f"Selected: {self.selected_item}")
+            self.selectedItemLabel.setText(f"{self.selected_item}")
         else:
-            self.selectedItemLabel.setText("No item selected")
+            self.selectedItemLabel.setText("No ECO mode selected")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
