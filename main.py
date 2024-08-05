@@ -105,7 +105,7 @@ class SecondApp(QMainWindow):
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
-        url = 'http://example.com'  # Remplacez par votre URL
+        url = 'http://192.168.0.2/Home.cgi'
         try:
             response = requests.get(url)
             if response.status_code == 200:
