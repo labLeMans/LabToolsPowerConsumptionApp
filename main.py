@@ -43,20 +43,28 @@ class SecondApp(QMainWindow):
 
     def update_ecoModecomboBox(self, states):
         self.ecoModecomboBox.clear()  # Vide la ComboBox avant de la mettre à jour
-        if states['fullpower']:
+        if states['fullpower']and not states['lowbattery']:
             self.ecoModecomboBox.addItem("OFF")
             self.ecoModecomboBox.addItem("Sleep")
             self.ecoModecomboBox.addItem("ECO 0")
             self.ecoModecomboBox.addItem("ECO 1")
             self.ecoModecomboBox.addItem("ECO 2")
-            if states['lowbattery']:
-                self.ecoModecomboBox.addItem("Low Battery")
+        if states['fullpower']and states['lowbattery']:
+            self.ecoModecomboBox.addItem("OFF")
+            self.ecoModecomboBox.addItem("Sleep")
+            self.ecoModecomboBox.addItem("ECO 0")
+            self.ecoModecomboBox.addItem("ECO 1")
+            self.ecoModecomboBox.addItem("ECO 2")
+            self.ecoModecomboBox.addItem("Low Battery")
         elif not states['fullpower'] and not states['lowbattery']:
             self.ecoModecomboBox.addItem("OFF")
             self.ecoModecomboBox.addItem("Sleep")
             self.ecoModecomboBox.addItem("ECO 0")
-            if states['lowbattery']:
-                self.ecoModecomboBox.addItem("Low Battery")
+        elif not states['fullpower'] and states['lowbattery']:
+            self.ecoModecomboBox.addItem("OFF")
+            self.ecoModecomboBox.addItem("Sleep")
+            self.ecoModecomboBox.addItem("ECO 0")
+            self.ecoModecomboBox.addItem("Low Battery")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
