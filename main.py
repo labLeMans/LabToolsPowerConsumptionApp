@@ -32,17 +32,28 @@ class SecondApp(QMainWindow):
         # Mise à jour de l'affichage en fonction des états des CheckBox
         if states['fullpower']:
             self.fullPowerLabel.setText("Full Power")
-            self.fullPowerLight.setPixmap(QtGui.QPixmap('green_light.png'))
+            self.set_round_image(self.fullPowerLight, 'green_light.png')
         else:
             self.fullPowerLabel.setText("Full Power")
-            self.fullPowerLight.setPixmap(QtGui.QPixmap('red_light.png'))
+            self.set_round_image(self.fullPowerLight, 'red_light.png')
 
         if states['lowbattery']:
             self.lowBatteryLabel.setText("Low Battery")
-            self.lowBatteryLight.setPixmap(QtGui.QPixmap('green_light.png'))
+            self.set_round_image(self.lowBatteryLight, 'green_light.png')
         else:
             self.lowBatteryLabel.setText("Low Battery")
-            self.lowBatteryLight.setPixmap(QtGui.QPixmap('red_light.png'))
+            self.set_round_image(self.lowBatteryLight, 'red_light.png')
+
+    def set_round_image(self, label, image_path):
+        pixmap = QtGui.QPixmap(image_path)
+        label.setPixmap(pixmap)
+        label.setStyleSheet("""
+            QLabel {
+                border-radius: %dpx;
+                background: transparent;
+            }
+        """ % (pixmap.width() // 2))
+        label.setScaledContents(True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
