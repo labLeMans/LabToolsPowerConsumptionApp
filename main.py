@@ -1,6 +1,7 @@
 import sys
 import requests
 import threading
+import time
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
@@ -117,7 +118,7 @@ class SecondApp(QMainWindow):
             power = self.fetch_power_value()
             if power is not None:
                 self.max_power = max(self.max_power, power)
-            QThread.sleep(1)  # Attendre 1 seconde entre les collectes
+            time.sleep(1)  # Attendre 1 seconde entre les collectes
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
