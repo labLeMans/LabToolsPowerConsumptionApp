@@ -3,7 +3,7 @@ import requests
 import threading
 import time
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QPushButton, QCheckBox, QLineEdit, QLabel
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
@@ -13,6 +13,32 @@ class MainApp(QMainWindow):
         super().__init__()
         self.load_ui()
         self.setup_connections()
+        
+         # Créer un widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        # Créer un layout principal
+        main_layout = QVBoxLayout()
+
+        # Ajouter des widgets au layout principal
+        self.moduleNameLineEdit = QLineEdit()
+        main_layout.addWidget(self.moduleNameLineEdit)
+
+        self.FullPowercheckBox = QCheckBox("Full Power")
+        main_layout.addWidget(self.FullPowercheckBox)
+
+        self.LowBatterycheckBox = QCheckBox("Low Battery")
+        main_layout.addWidget(self.LowBatterycheckBox)
+
+        self.validatePushButton = QPushButton("Validate")
+        main_layout.addWidget(self.validatePushButton)
+
+        # Appliquer le layout au widget central
+        central_widget.setLayout(main_layout)
+
+        # Connecter le bouton
+        self.validatePushButton.clicked.connect(self.show_second_window)
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -56,6 +82,42 @@ class SecondApp(QMainWindow):
         self.max_power = 0  # Initialiser la puissance maximale
         self.collecting_data = False  # Flag to check if data collection is ongoing
         self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
+
+        # Créer un widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        # Créer un layout principal
+        main_layout = QVBoxLayout()
+
+        # Ajouter des widgets au layout principal
+        self.fullPowerLight = QLabel()
+        self.lowBatteryLight = QLabel()
+        self.ecoModecomboBox = QComboBox()
+        self.startPushButton = QPushButton("Start")
+        self.stopPushButton = QPushButton("Stop")
+        self.endPushButton = QPushButton("End")
+        self.selectedItemLabel = QLabel()
+
+        main_layout.addWidget(self.fullPowerLight)
+        main_layout.addWidget(self.lowBatteryLight)
+        main_layout.addWidget(self.ecoModecomboBox)
+        main_layout.addWidget(self.startPushButton)
+        main_layout.addWidget(self.stopPushButton)
+        main_layout.addWidget(self.endPushButton)
+        main_layout.addWidget(self.selectedItemLabel)
+
+        # Appliquer le layout au widget central
+        central_widget.setLayout(main_layout)
+
+        # Afficher les états des boutons
+        self.display_tool_button_states(tool_button_states)
+
+        # Connecter les boutons
+        self.startPushButton.clicked.connect(self.start_collecting)
+        self.stopPushButton.clicked.connect(self.stop_collecting)
+        self.endPushButton.clicked.connect(self.generate_excel)
+        self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
