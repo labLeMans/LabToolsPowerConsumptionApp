@@ -3,7 +3,7 @@ import requests
 import threading
 import time
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
@@ -24,9 +24,16 @@ class MainApp(QMainWindow):
 
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
+        modulename = self.moduleNameLineEdit.text().strip() # Récupère le nom du module dans la QLineEdit
+        
+        if not modulename:
+            # Affiche un message d'erreur si la QLineEdit est vide
+            QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
+            return # Empêche le passage à la fenêtre suivante
+        
         tool_button_states = self.get_tool_button_states()
-        file_name = self.moduleNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
-        self.second_window = SecondApp(tool_button_states, file_name)
+        modulename = self.moduleNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
+        self.second_window = SecondApp(tool_button_states, modulename)
         self.second_window.show()
         self.close()  # Ferme la fenêtre principale
 
@@ -39,9 +46,8 @@ class MainApp(QMainWindow):
         return states
 
 class SecondApp(QMainWindow):
-    def __init__(self, tool_button_states, file_name):
+    def __init__(self, tool_button_states, modulename):
         super().__init__()
-        self.file_name = file_name  # Stocke le nom du fichier
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
         self.setup_connections()
@@ -173,12 +179,12 @@ class SecondApp(QMainWindow):
                 sheet.append([mode, max_power])
 
             # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
-            file_name = self.file_name if self.file_name.endswith('.xlsx') else self.file_name + '.xlsx'
-            workbook.save(file_name)
+            modulename = self.modulename if self.modulename.endswith('.xlsx') else self.modulename + '.xlsx'
+            workbook.save(modulename)
 
             # Vérifier si le fichier a été créé correctement
-            if os.path.isfile(file_name):
-                print(f"Fichier Excel '{file_name}' créé avec succès.")
+            if os.path.isfile(modulename):
+                print(f"Fichier Excel '{modulename}' créé avec succès.")
                 # Fermer la fenêtre secondaire
                 self.close()
             else:
