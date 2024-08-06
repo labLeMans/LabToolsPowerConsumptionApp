@@ -2,6 +2,7 @@ import sys
 import requests
 import threading
 import time
+import os
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
