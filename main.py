@@ -34,16 +34,6 @@ class MainApp(QMainWindow):
         return states
 
 class SecondApp(QMainWindow):
-    # Dictionnaire associant chaque élément à un numéro
-    ITEM_NUMBERS = {
-        "OFF": 1,
-        "Sleep": 2,
-        "ECO 0": 3,
-        "ECO 1": 4,
-        "ECO 2": 5,
-        "Low Battery": 6
-    }
-
     def __init__(self, tool_button_states):
         super().__init__()
         self.load_ui()
@@ -56,7 +46,7 @@ class SecondApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
-        self.pushStartButton.clicked.connect(self.update_label_from_combobox)
+        self.startPushButton.clicked.connect(self.update_label_from_combobox)
         self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
@@ -68,9 +58,9 @@ class SecondApp(QMainWindow):
     def update_light(self, label, state):
         """Met à jour l'image du label en fonction de l'état (vert pour actif, rouge pour inactif)."""
         if state:
-            label.setPixmap(QtGui.QPixmap('images/green_light.png'))
+            label.setPixmap(QtGui.QPixmap('image/green_light.png'))
         else:
-            label.setPixmap(QtGui.QPixmap('images/red_light.png'))
+            label.setPixmap(QtGui.QPixmap('image/red_light.png'))
 
     def update_ecoModecomboBox(self, states):
         """Met à jour les éléments de la ComboBox en fonction des états des CheckBox."""
@@ -103,6 +93,24 @@ class SecondApp(QMainWindow):
         """Sauvegarde l'élément sélectionné dans la ComboBox."""
         self.selected_item = self.ecoModecomboBox.currentText()
 
+    #def update_label_from_combobox(self):
+    #    """Met à jour le QLabel avec l'élément sélectionné lorsque le bouton 'Push Start' est pressé."""
+    #    if hasattr(self, 'selected_item'):
+    #        self.selectedItemLabel.setText(f"{self.selected_item}")
+    #    else:
+    #        self.selectedItemLabel.setText("No ECO mode selected")
+        
+    def update_label_from_combobox(self):
+        """Met à jour le QLabel avec l'élément sélectionné et la puissance lorsque le bouton 'Push Start' est pressé."""
+        if hasattr(self, 'selected_item'):
+            power = self.fetch_power_value()
+            if power is not None:
+                self.selectedItemLabel.setText(f"{self.selected_item} (Power: {power:.2f} W)")
+            else:
+                self.selectedItemLabel.setText("Erreur lors de la récupération de la puissance")
+        else:
+            self.selectedItemLabel.setText("No item selected")
+
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
         url = 'http://192.168.0.2/Home.cgi'
@@ -133,17 +141,6 @@ class SecondApp(QMainWindow):
         except Exception as e:
             print(f"Erreur lors de la récupération de la valeur de puissance: {e}")
             return None
-
-    def update_label_from_combobox(self):
-        """Met à jour le QLabel avec l'élément sélectionné et la puissance lorsque le bouton 'Push Start' est pressé."""
-        if hasattr(self, 'selected_item'):
-            power = self.fetch_power_value()
-            if power is not None:
-                self.selectedItemLabel.setText(f"Selected: {self.selected_item} (Power: {power:.2f} W)")
-            else:
-                self.selectedItemLabel.setText("Erreur lors de la récupération de la puissance")
-        else:
-            self.selectedItemLabel.setText("No item selected")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
