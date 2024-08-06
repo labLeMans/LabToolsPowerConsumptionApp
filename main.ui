@@ -7,74 +7,103 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>592</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>ITxPT_Lab</string>
+   <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QCheckBox" name="FullPowercheckBox">
+   <widget class="QWidget" name="gridLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>190</y>
-      <width>131</width>
-      <height>23</height>
+      <x>400</x>
+      <y>80</y>
+      <width>341</width>
+      <height>91</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Full Power</string>
-    </property>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0">
+      <widget class="QLineEdit" name="moduleNameLineEdit"/>
+     </item>
+    </layout>
    </widget>
-   <widget class="QCheckBox" name="LowBatterycheckBox">
+   <widget class="QWidget" name="gridLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>240</y>
-      <width>131</width>
-      <height>23</height>
+      <x>40</x>
+      <y>80</y>
+      <width>171</width>
+      <height>91</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Low Battery</string>
-    </property>
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="0" column="0">
+      <widget class="QLabel" name="moduleNameLabel">
+       <property name="text">
+        <string>Module Name</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QLabel" name="moduleNameLabel">
+   <widget class="QWidget" name="gridLayoutWidget_3">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>140</y>
-      <width>131</width>
-      <height>17</height>
+      <x>320</x>
+      <y>390</y>
+      <width>161</width>
+      <height>121</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Module Name</string>
-    </property>
+    <layout class="QGridLayout" name="gridLayout_4">
+     <item row="0" column="0">
+      <widget class="QPushButton" name="validatePushButton">
+       <property name="text">
+        <string>Validate</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QLineEdit" name="moduleNameLineEdit">
+   <widget class="QWidget" name="gridLayoutWidget_4">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>140</y>
-      <width>181</width>
-      <height>25</height>
+      <x>40</x>
+      <y>210</y>
+      <width>160</width>
+      <height>80</height>
      </rect>
     </property>
+    <layout class="QGridLayout" name="gridLayout_5">
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="FullPowercheckBox">
+       <property name="text">
+        <string>Full Power</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
-   <widget class="QPushButton" name="validatePushButton">
+   <widget class="QWidget" name="gridLayoutWidget_5">
     <property name="geometry">
      <rect>
-      <x>300</x>
-      <y>340</y>
-      <width>89</width>
-      <height>25</height>
+      <x>40</x>
+      <y>300</y>
+      <width>160</width>
+      <height>80</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Validate</string>
-    </property>
+    <layout class="QGridLayout" name="gridLayout_6">
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="LowBatterycheckBox">
+       <property name="text">
+        <string>Low Battery</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
