@@ -1,13 +1,13 @@
 import sys
+import requests
 import threading
 import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLineEdit, QCheckBox, QPushButton, QLabel, QComboBox
+import os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5 import uic, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-import requests
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
-import os
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -18,11 +18,6 @@ class MainApp(QMainWindow):
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
         uic.loadUi('main.ui', self)
-        # Accéder aux widgets si nécessaire
-        self.moduleNameLineEdit = self.findChild(QLineEdit, 'moduleNameLineEdit')
-        self.FullPowercheckBox = self.findChild(QCheckBox, 'FullPowercheckBox')
-        self.LowBatterycheckBox = self.findChild(QCheckBox, 'LowBatterycheckBox')
-        self.validatePushButton = self.findChild(QPushButton, 'validatePushButton')
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
@@ -30,14 +25,18 @@ class MainApp(QMainWindow):
 
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
-        modulename = self.moduleNameLineEdit.text().strip()
+        modulename = self.moduleNameLineEdit.text().strip() # Récupère le nom du module dans la QLineEdit
+        
         if not modulename:
+            # Affiche un message d'erreur si la QLineEdit est vide
             QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
-            return
+            return # Empêche le passage à la fenêtre suivante
+        
         tool_button_states = self.get_tool_button_states()
+        modulename = self.moduleNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
         self.second_window = SecondApp(tool_button_states, modulename)
         self.second_window.show()
-        self.close()
+        self.close()  # Ferme la fenêtre principale
 
     def get_tool_button_states(self):
         """Récupère les états des CheckBox dans la fenêtre principale."""
@@ -55,11 +54,10 @@ class SecondApp(QMainWindow):
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
         self.setup_connections()
-        self.max_power = 0
-        self.collecting_data = False
-        self.power_data = {}
-        self.modulename = modulename
-        self.selected_item = ""
+        self.max_power = 0  # Initialiser la puissance maximale
+        self.collecting_data = False  # Flag to check if data collection is ongoing
+        self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
+        self.modulename = modulename # Stocker le nom du module
 
         # Connecter le signal power_updated à la méthode update_power_display
         self.power_updated.connect(self.update_power_display)
@@ -67,20 +65,12 @@ class SecondApp(QMainWindow):
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
         uic.loadUi('second.ui', self)
-        # Accéder aux widgets si nécessaire
-        self.startPushButton = self.findChild(QPushButton, 'startPushButton')
-        self.stopPushButton = self.findChild(QPushButton, 'stopPushButton')
-        self.endPushButton = self.findChild(QPushButton, 'endPushButton')
-        self.ecoModecomboBox = self.findChild(QComboBox, 'ecoModecomboBox')
-        self.selectedItemLabel = self.findChild(QLabel, 'selectedItemLabel')
-        self.fullPowerLight = self.findChild(QLabel, 'fullPowerLight')
-        self.lowBatteryLight = self.findChild(QLabel, 'lowBatteryLight')
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
         self.startPushButton.clicked.connect(self.start_collecting)
         self.stopPushButton.clicked.connect(self.stop_collecting)
-        self.endPushButton.clicked.connect(self.generate_excel)
+        self.endPushButton.clicked.connect(self.generate_excel)  # Connexion pour le bouton "End"
         self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
@@ -98,7 +88,8 @@ class SecondApp(QMainWindow):
 
     def update_ecoModecomboBox(self, states):
         """Met à jour les éléments de la ComboBox en fonction des états des CheckBox."""
-        self.ecoModecomboBox.clear()
+        self.ecoModecomboBox.clear()  # Vide la ComboBox avant de la mettre à jour
+        
         if states['fullpower']:
             self.add_fullpower_items(states['lowbattery'])
         else:
@@ -128,7 +119,7 @@ class SecondApp(QMainWindow):
 
     def start_collecting(self):
         """Démarre la collecte des données de puissance."""
-        self.max_power = 0
+        self.max_power = 0  # Réinitialiser la puissance maximale
         self.collecting_data = True
         self.collect_data_thread = threading.Thread(target=self.collect_data)
         self.collect_data_thread.start()
@@ -139,7 +130,8 @@ class SecondApp(QMainWindow):
         if self.collect_data_thread.is_alive():
             self.collect_data_thread.join()
         self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
-        self.power_data[self.selected_item] = self.max_power
+        if self.selected_item:
+            self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
 
     def collect_data(self):
         """Collecte les données de puissance à intervalle régulier."""
@@ -148,7 +140,7 @@ class SecondApp(QMainWindow):
             if power is not None:
                 self.max_power = max(self.max_power, power)
                 self.power_updated.emit(self.max_power)  # Émettre le signal de mise à jour
-            time.sleep(1)
+            time.sleep(1)  # Attendre 1 seconde entre les collectes
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
@@ -156,11 +148,22 @@ class SecondApp(QMainWindow):
         try:
             response = requests.get(url)
             if response.status_code == 200:
+                # Extrait la valeur à partir du contenu de la page web
                 soup = BeautifulSoup(response.text, 'html.parser')
+
+                # Trouver l'input avec l'attribut id "actcur"
                 current_element = soup.find('input', {'id': 'actcur'})
+
+                # Trouver l'input avec l'attribut id "actvol"
                 voltage_element = soup.find('input', {'id': 'actvol'})
+
+                # Extrait la valeur du courant de l'attribut "value" et conversion en float
                 current = float(current_element['value'].replace(' A', ''))
+
+                # Extrait la valeur de la tension de l'attribut "value" et conversion en float
                 voltage = float(voltage_element['value'].replace(' V', ''))
+
+                # Multiplication du courant par la tension pour avoir la puissance
                 power = current * voltage
                 return power
             else:
@@ -169,6 +172,7 @@ class SecondApp(QMainWindow):
         except Exception as e:
             print(f"Erreur lors de la récupération de la valeur de puissance: {e}")
             return None
+        
 
     def update_power_display(self, power):
         """Met à jour l'affichage de la puissance en temps réel."""
@@ -177,6 +181,15 @@ class SecondApp(QMainWindow):
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
         try:
+            # Créer le répertoire 'results' s'il n'existe pas
+            directory = 'results'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+            # Nom du fichier Excel avec le préfixe et le nom du module
+            filename = f"power_consumption_{self.modulename}.xlsx"
+            filepath = os.path.join(directory, filename) # chemin complet du fichier
+
             workbook = Workbook()
             sheet = workbook.active
             sheet.title = "Max Power Data"
@@ -189,21 +202,23 @@ class SecondApp(QMainWindow):
                 sheet.append([mode, max_power])
 
             # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
-            modulename = self.modulename if self.modulename.endswith('.xlsx') else self.modulename + '.xlsx'
-            workbook.save(modulename)
+            workbook.save(filepath)
 
             # Vérifier si le fichier a été créé correctement
-            if os.path.isfile(modulename):
-                print(f"Fichier Excel '{modulename}' créé avec succès.")
+            if os.path.isfile(filepath):
+                print(f"Fichier Excel '{filepath}' créé avec succès.")
                 # Fermer la fenêtre secondaire
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
+        
         except Exception as e:
-            print(f"Erreur lors de la création du fichier Excel: {e}")
+            # Afficher un message d'erreur en cas d'exception
+            QMessageBox.critical(self, "Erreur", f"Une erreur s'est produite lors de la création du fichier Excel : {e}")
+            print(f"Erreur lors de la création du fichier Excel : {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = MainApp()
-    window.show()
+    main_window = MainApp()
+    main_window.show()
     sys.exit(app.exec_())
