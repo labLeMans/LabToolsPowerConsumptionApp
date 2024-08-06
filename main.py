@@ -5,6 +5,7 @@ import time
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
+from openpyxl import Workbook
 
 class MainApp(QMainWindow):
     def __init__(self):
@@ -43,6 +44,7 @@ class SecondApp(QMainWindow):
         self.setup_connections()
         self.max_power = 0  # Initialiser la puissance maximale
         self.collecting_data = False  # Flag to check if data collection is ongoing
+        self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
@@ -52,6 +54,7 @@ class SecondApp(QMainWindow):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
         self.startPushButton.clicked.connect(self.start_collecting)
         self.stopPushButton.clicked.connect(self.stop_collecting)
+        self.endPushButton.clicked.connect(self.generate_excel)  # Connexion pour le bouton "End"
         self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
@@ -110,6 +113,7 @@ class SecondApp(QMainWindow):
         self.collecting_data = False
         if self.collect_data_thread.is_alive():
             self.collect_data_thread.join()
+        self.power_data[self.selected_item] = self.max_power  # Enregistrer la puissance maximale pour le mode actuel
         self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
 
     def collect_data(self):
@@ -150,6 +154,19 @@ class SecondApp(QMainWindow):
         except Exception as e:
             print(f"Erreur lors de la récupération de la valeur de puissance: {e}")
             return None
+
+    def generate_excel(self):
+        """Génère un fichier Excel avec les données de puissance maximale pour chaque mode."""
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Max Power Data"
+        sheet.append(["Mode", "Max Power (W)"])  # Ajouter les en-têtes
+
+        for mode, max_power in self.power_data.items():
+            sheet.append([mode, max_power])  # Ajouter les données de chaque mode
+
+        workbook.save("max_power_data.xlsx")  # Sauvegarder le fichier Excel
+        self.selectedItemLabel.setText("Fichier Excel généré: max_power_data.xlsx")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
