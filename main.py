@@ -158,25 +158,35 @@ class SecondApp(QMainWindow):
             return None
 
     def generate_excel(self):
-        """Génère un fichier Excel avec la puissance maximale pour chaque mode."""
-        workbook = Workbook()
-        sheet = workbook.active
-        sheet.title = "Max Power Data"
+        """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
+        try:
+            workbook = Workbook()
+            sheet = workbook.active
+            sheet.title = "Max Power Data"
 
-        # Ajouter des en-têtes
-        sheet.append(["Mode", "Max Power (W)"])
+            # Ajouter des en-têtes
+            sheet.append(["Mode", "Max Power (W)"])
 
-        # Ajouter les données
-        for mode, max_power in self.power_data.items():
-            sheet.append([mode, max_power])
+            # Ajouter les données
+            for mode, max_power in self.power_data.items():
+                sheet.append([mode, max_power])
 
-        # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
-        file_name = self.file_name if self.file_name.endswith('.xlsx') else self.file_name + '.xlsx'
-        workbook.save(file_name)
-        print(f"Fichier Excel '{file_name}' créé avec succès.")
+            # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
+            file_name = self.file_name if self.file_name.endswith('.xlsx') else self.file_name + '.xlsx'
+            workbook.save(file_name)
 
-        #Fermer la fenêtre secondaire 
-        self.close()
+            # Vérifier si le fichier a été créé correctement
+            if os.path.isfile(file_name):
+                print(f"Fichier Excel '{file_name}' créé avec succès.")
+                # Fermer la fenêtre secondaire
+                self.close()
+            else:
+                raise Exception("Le fichier Excel n'a pas été créé.")
+        
+        except Exception as e:
+            # Afficher un message d'erreur en cas d'exception
+            QMessageBox.critical(self, "Erreur", f"Une erreur s'est produite lors de la création du fichier Excel : {e}")
+            print(f"Erreur lors de la création du fichier Excel : {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
