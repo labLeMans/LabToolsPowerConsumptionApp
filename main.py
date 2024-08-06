@@ -3,7 +3,7 @@ import requests
 import threading
 import time
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
@@ -24,12 +24,12 @@ class MainApp(QMainWindow):
 
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
-        modulename = self.moduleNameLineEdit.text().strip() # Récupère le nom du module dans la QLineEdit
+        modulename = self.moduleNameLineEdit.text().strip()  # Récupère le nom du module dans la QLineEdit
         
         if not modulename:
             # Affiche un message d'erreur si la QLineEdit est vide
             QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
-            return # Empêche le passage à la fenêtre suivante
+            return  # Empêche le passage à la fenêtre suivante
         
         tool_button_states = self.get_tool_button_states()
         modulename = self.moduleNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
@@ -48,13 +48,14 @@ class MainApp(QMainWindow):
 class SecondApp(QMainWindow):
     def __init__(self, tool_button_states, modulename):
         super().__init__()
+        self.modulename = modulename  # Stocker le nom du module
+        self.selected_item = ""  # Initialiser selected_item
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
         self.setup_connections()
         self.max_power = 0  # Initialiser la puissance maximale
         self.collecting_data = False  # Flag to check if data collection is ongoing
         self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
-        self.modulename = modulename # Stocker le nom du module
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
@@ -124,8 +125,7 @@ class SecondApp(QMainWindow):
         if self.collect_data_thread.is_alive():
             self.collect_data_thread.join()
         self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
-        if self.selected_item:
-            self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
+        self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
 
     def collect_data(self):
         """Collecte les données de puissance à intervalle régulier."""
@@ -169,15 +169,6 @@ class SecondApp(QMainWindow):
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
         try:
-            # Créer le répertoire 'results' s'il n'existe pas
-            directory = 'results'
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-
-            # Nom du fichier Excel avec le préfixe et le nom du module
-            filename = f"power_consumption_{self.modulename}.xlsx"
-            filepath = os.path.join(directory, filename) # chemin complet du fichier
-
             workbook = Workbook()
             sheet = workbook.active
             sheet.title = "Max Power Data"
@@ -189,12 +180,18 @@ class SecondApp(QMainWindow):
             for mode, max_power in self.power_data.items():
                 sheet.append([mode, max_power])
 
-            # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
-            workbook.save(filepath)
+            # Créez le répertoire 'results' s'il n'existe pas
+            results_dir = 'results'
+            os.makedirs(results_dir, exist_ok=True)
+
+            # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit dans le répertoire 'results'
+            modulename = self.modulename if self.modulename.endswith('.xlsx') else self.modulename + '.xlsx'
+            file_path = os.path.join(results_dir, modulename)
+            workbook.save(file_path)
 
             # Vérifier si le fichier a été créé correctement
-            if os.path.isfile(filepath):
-                print(f"Fichier Excel '{filepath}' créé avec succès.")
+            if os.path.isfile(file_path):
+                print(f"Fichier Excel '{file_path}' créé avec succès.")
                 # Fermer la fenêtre secondaire
                 self.close()
             else:
