@@ -54,6 +54,7 @@ class SecondApp(QMainWindow):
         self.max_power = 0  # Initialiser la puissance maximale
         self.collecting_data = False  # Flag to check if data collection is ongoing
         self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
+        self.modulename = modulename # Stocker le nom du module
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
