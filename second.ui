@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>ITxPT_lab</class>
+ <widget class="QMainWindow" name="ITxPT_lab">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ITxPT_Lab</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QComboBox" name="ecoModecomboBox">
@@ -111,7 +111,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>Full Power</string>
     </property>
    </widget>
    <widget class="QLabel" name="lowBatteryLabel">
@@ -124,7 +124,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>Low Battery</string>
     </property>
    </widget>
    <widget class="QLabel" name="fullPowerLight">
@@ -156,14 +156,14 @@
    <widget class="QLabel" name="selectedItemLabel">
     <property name="geometry">
      <rect>
-      <x>340</x>
+      <x>160</x>
       <y>170</y>
-      <width>181</width>
-      <height>17</height>
+      <width>431</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>TextLabel</string>
+     <string>no ECO mode selected</string>
     </property>
    </widget>
   </widget>
