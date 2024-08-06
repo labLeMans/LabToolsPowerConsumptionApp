@@ -1,5 +1,6 @@
 import sys
 import requests
+import threading
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import uic, QtGui
 from bs4 import BeautifulSoup
@@ -39,6 +40,8 @@ class SecondApp(QMainWindow):
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
         self.setup_connections()
+        self.max_power = 0  # Initialiser la puissance maximale
+        self.collecting_data = False  # Flag to check if data collection is ongoing
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre secondaire."""
@@ -46,7 +49,8 @@ class SecondApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots pour la fenêtre secondaire."""
-        self.startPushButton.clicked.connect(self.update_label_from_combobox)
+        self.startPushButton.clicked.connect(self.start_collecting)
+        self.stopPushButton.clicked.connect(self.stop_collecting)
         self.ecoModecomboBox.currentIndexChanged.connect(self.save_selected_item)
 
     def display_tool_button_states(self, states):
@@ -93,23 +97,27 @@ class SecondApp(QMainWindow):
         """Sauvegarde l'élément sélectionné dans la ComboBox."""
         self.selected_item = self.ecoModecomboBox.currentText()
 
-    #def update_label_from_combobox(self):
-    #    """Met à jour le QLabel avec l'élément sélectionné lorsque le bouton 'Push Start' est pressé."""
-    #    if hasattr(self, 'selected_item'):
-    #        self.selectedItemLabel.setText(f"{self.selected_item}")
-    #    else:
-    #        self.selectedItemLabel.setText("No ECO mode selected")
-        
-    def update_label_from_combobox(self):
-        """Met à jour le QLabel avec l'élément sélectionné et la puissance lorsque le bouton 'Push Start' est pressé."""
-        if hasattr(self, 'selected_item'):
+    def start_collecting(self):
+        """Démarre la collecte des données de puissance."""
+        self.max_power = 0  # Réinitialiser la puissance maximale
+        self.collecting_data = True
+        self.collect_data_thread = threading.Thread(target=self.collect_data)
+        self.collect_data_thread.start()
+
+    def stop_collecting(self):
+        """Arrête la collecte des données de puissance."""
+        self.collecting_data = False
+        if self.collect_data_thread.is_alive():
+            self.collect_data_thread.join()
+        self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
+
+    def collect_data(self):
+        """Collecte les données de puissance à intervalle régulier."""
+        while self.collecting_data:
             power = self.fetch_power_value()
             if power is not None:
-                self.selectedItemLabel.setText(f"{self.selected_item} (Power: {power:.2f} W)")
-            else:
-                self.selectedItemLabel.setText("Erreur lors de la récupération de la puissance")
-        else:
-            self.selectedItemLabel.setText("No item selected")
+                self.max_power = max(self.max_power, power)
+            QThread.sleep(1)  # Attendre 1 seconde entre les collectes
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
