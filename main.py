@@ -24,7 +24,7 @@ class MainApp(QMainWindow):
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
         tool_button_states = self.get_tool_button_states()
-        file_name = self.fileNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
+        file_name = self.moduleNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
         self.second_window = SecondApp(tool_button_states, file_name)
         self.second_window.show()
         self.close()  # Ferme la fenêtre principale
@@ -174,6 +174,9 @@ class SecondApp(QMainWindow):
         file_name = self.file_name if self.file_name.endswith('.xlsx') else self.file_name + '.xlsx'
         workbook.save(file_name)
         print(f"Fichier Excel '{file_name}' créé avec succès.")
+
+        #Fermer la fenêtre secondaire 
+        self.close()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
