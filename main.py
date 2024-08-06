@@ -124,7 +124,8 @@ class SecondApp(QMainWindow):
         if self.collect_data_thread.is_alive():
             self.collect_data_thread.join()
         self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
-        self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
+        if self.selected_item:
+            self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
 
     def collect_data(self):
         """Collecte les données de puissance à intervalle régulier."""
@@ -168,6 +169,15 @@ class SecondApp(QMainWindow):
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
         try:
+            # Créer le répertoire 'results' s'il n'existe pas
+            directory = 'results'
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
+            # Nom du fichier Excel avec le préfixe et le nom du module
+            filename = f"power_consumption_{self.modulename}.xlsx"
+            filepath = os.path.join(directory, filename) # chemin complet du fichier
+
             workbook = Workbook()
             sheet = workbook.active
             sheet.title = "Max Power Data"
@@ -180,12 +190,11 @@ class SecondApp(QMainWindow):
                 sheet.append([mode, max_power])
 
             # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
-            modulename = self.modulename if self.modulename.endswith('.xlsx') else self.modulename + '.xlsx'
-            workbook.save(modulename)
+            workbook.save(filepath)
 
             # Vérifier si le fichier a été créé correctement
-            if os.path.isfile(modulename):
-                print(f"Fichier Excel '{modulename}' créé avec succès.")
+            if os.path.isfile(filepath):
+                print(f"Fichier Excel '{filepath}' créé avec succès.")
                 # Fermer la fenêtre secondaire
                 self.close()
             else:
