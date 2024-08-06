@@ -58,6 +58,7 @@ class SecondApp(QMainWindow):
         self.collecting_data = False  # Flag to check if data collection is ongoing
         self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
         self.modulename = modulename # Stocker le nom du module
+        self.selected_item = "OFF"
 
         # Connecter le signal power_updated à la méthode update_power_display
         self.power_updated.connect(self.update_power_display)
