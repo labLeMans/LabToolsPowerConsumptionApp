@@ -24,7 +24,8 @@ class MainApp(QMainWindow):
     def show_second_window(self):
         """Crée et affiche la fenêtre secondaire, puis ferme la fenêtre principale."""
         tool_button_states = self.get_tool_button_states()
-        self.second_window = SecondApp(tool_button_states)
+        file_name = self.fileNameLineEdit.text()  # Récupère le nom du fichier depuis le QLineEdit
+        self.second_window = SecondApp(tool_button_states, file_name)
         self.second_window.show()
         self.close()  # Ferme la fenêtre principale
 
@@ -37,8 +38,9 @@ class MainApp(QMainWindow):
         return states
 
 class SecondApp(QMainWindow):
-    def __init__(self, tool_button_states):
+    def __init__(self, tool_button_states, file_name):
         super().__init__()
+        self.file_name = file_name  # Stocke le nom du fichier
         self.load_ui()
         self.display_tool_button_states(tool_button_states)
         self.setup_connections()
@@ -113,8 +115,8 @@ class SecondApp(QMainWindow):
         self.collecting_data = False
         if self.collect_data_thread.is_alive():
             self.collect_data_thread.join()
-        self.power_data[self.selected_item] = self.max_power  # Enregistrer la puissance maximale pour le mode actuel
         self.selectedItemLabel.setText(f"Max Power: {self.max_power:.2f} W")
+        self.power_data[self.selected_item] = self.max_power  # Enregistre la puissance maximale pour le mode actuel
 
     def collect_data(self):
         """Collecte les données de puissance à intervalle régulier."""
@@ -156,17 +158,22 @@ class SecondApp(QMainWindow):
             return None
 
     def generate_excel(self):
-        """Génère un fichier Excel avec les données de puissance maximale pour chaque mode."""
+        """Génère un fichier Excel avec la puissance maximale pour chaque mode."""
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = "Max Power Data"
-        sheet.append(["Mode", "Max Power (W)"])  # Ajouter les en-têtes
 
+        # Ajouter des en-têtes
+        sheet.append(["Mode", "Max Power (W)"])
+
+        # Ajouter les données
         for mode, max_power in self.power_data.items():
-            sheet.append([mode, max_power])  # Ajouter les données de chaque mode
+            sheet.append([mode, max_power])
 
-        workbook.save("max_power_data.xlsx")  # Sauvegarder le fichier Excel
-        self.selectedItemLabel.setText("Fichier Excel généré: max_power_data.xlsx")
+        # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
+        file_name = self.file_name if self.file_name.endswith('.xlsx') else self.file_name + '.xlsx'
+        workbook.save(file_name)
+        print(f"Fichier Excel '{file_name}' créé avec succès.")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
