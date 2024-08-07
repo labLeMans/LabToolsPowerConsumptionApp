@@ -1,7 +1,5 @@
 import sys
 import requests
-import threading
-import time
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 from PyQt5 import uic, QtGui, QtCore
@@ -45,11 +43,13 @@ class MainApp(QMainWindow):
 
         # Initialiser une liste pour stocker les données de puissance
         self.power_values = []
+        self.time_values = []
 
         # Configurer le QTimer pour mettre à jour les données toutes les secondes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
         self.timer.start(1000)  # Mettre à jour toutes les secondes
+        self.start_time = QtCore.QTime.currentTime()  # Enregistrer l'heure de départ
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -109,11 +109,19 @@ class MainApp(QMainWindow):
         """Met à jour le graphique avec les nouvelles données de puissance."""
         power = self.fetch_power_value()
         if power is not None:
+            current_time = QtCore.QTime.currentTime()
+            elapsed_time = self.start_time.secsTo(current_time)  # Temps écoulé en secondes
+
             self.power_values.append(power)
+            self.time_values.append(elapsed_time)
             if len(self.power_values) > 100:  # Garder seulement les 100 dernières valeurs
                 self.power_values.pop(0)
+                self.time_values.pop(0)
+
             self.canvas.axes.clear()
-            self.canvas.axes.plot(self.power_values, label='Power (W)')
+            self.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
+            self.canvas.axes.set_xlabel("Time (s)")
+            self.canvas.axes.set_ylabel("Power (W)")
             self.canvas.axes.legend()
             self.canvas.draw()
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage de la puissance
@@ -147,11 +155,12 @@ class MainApp(QMainWindow):
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
-        
+
         except Exception as e:
             print(f"Erreur lors de la création du fichier Excel : {e}")
             QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
             return None
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
