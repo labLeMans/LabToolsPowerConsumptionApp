@@ -3,7 +3,7 @@ import requests
 import threading
 import time
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 from PyQt5 import uic, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from matplotlib.figure import Figure
