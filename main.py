@@ -29,7 +29,8 @@ class MainApp(QMainWindow):
         
         if not modulename:
             # Affiche un message d'erreur si la QLineEdit est vide
-            QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
+            #QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
+            self.show_warning_message(f"Nom du module manquant", "Veuillez entrer le nom du module")
             return # Empêche le passage à la fenêtre suivante
         
         tool_button_states = self.get_tool_button_states()
@@ -169,9 +170,11 @@ class SecondApp(QMainWindow):
                 return power
             else:
                 print(f"Erreur {response.status_code} lors de la récupération de la page web de l'alimentation")
+                self.show_warning_message(f"Erreur {response.status_code} lors de la récupération de la page web de l'alimentation")
                 return None
         except Exception as e:
             print(f"Erreur lors de la récupération de la valeur de puissance: {e}")
+            self.show_warning_message(f"Erreur lors de la récupération de la valeur de puissance: {e}")
             return None
         
 
@@ -215,8 +218,17 @@ class SecondApp(QMainWindow):
         
         except Exception as e:
             # Afficher un message d'erreur en cas d'exception
-            QMessageBox.critical(self, "Erreur", f"Une erreur s'est produite lors de la création du fichier Excel : {e}")
             print(f"Erreur lors de la création du fichier Excel : {e}")
+            self.show_warning_message(f"Erreur lors de la création du fichier Excel : {e}")
+            return None
+
+    def show_warning_message(self, message):
+        """Affiche une fenêtre de message d'avertissement."""
+        warning_dialog = QMessageBox()
+        warning_dialog.setIcon(QMessageBox.Warning)
+        warning_dialog.setWindowTitle("Erreur")
+        warning_dialog.setText(message)
+        warning_dialog.exec_()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
