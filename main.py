@@ -51,6 +51,50 @@ class MainApp(QMainWindow):
         self.timer.start(1000)  # Mettre à jour toutes les secondes
         self.start_time = QtCore.QTime.currentTime()  # Enregistrer l'heure de départ
 
+        # Exemples de données à tracer
+        self.plot_example_data()
+
+        # Ajouter les marqueurs
+        self.markers = {
+            'ignition': {'color': 'red', 'label': 'Ignition'},
+            'fullPower': {'color': 'blue', 'label': 'Full Power'},
+            'lowBattery': {'color': 'green', 'label': 'Low Battery'},
+            'manualSwitch': {'color': 'orange', 'label': 'Manual Switch'}
+        }
+
+    def update_markers(self):
+        """Met à jour les marqueurs sur le graphique en fonction de l'état des cases à cocher."""
+        # Effacer les marqueurs précédents
+        self.canvas.axes.clear()
+        
+        # Exemple de données
+        import numpy as np
+        t = np.linspace(0, 10, 100)
+        y = np.sin(t)
+        self.canvas.axes.plot(t, y, label='Data')
+
+        # Ajouter des marqueurs en fonction de l'état des cases
+        if self.ignitionCheckBox.isChecked():
+            self.canvas.axes.plot(1, 1, 'o', color=self.markers['ignition']['color'], label=self.markers['ignition']['label'])
+        if self.fullPowerCheckBox.isChecked():
+            self.canvas.axes.plot(2, 1, 'o', color=self.markers['fullPower']['color'], label=self.markers['fullPower']['label'])
+        if self.lowBatteryCheckBox.isChecked():
+            self.canvas.axes.plot(3, 1, 'o', color=self.markers['lowBattery']['color'], label=self.markers['lowBattery']['label'])
+        if self.manualSwitchCheckBox.isChecked():
+            self.canvas.axes.plot(4, 1, 'o', color=self.markers['manualSwitch']['color'], label=self.markers['manualSwitch']['label'])
+
+        # Afficher la légende
+        self.canvas.axes.legend()
+        self.canvas.draw()
+
+    def setup_connections(self):
+        """Configure les connexions des signaux et slots."""
+        self.manualSwitchCheckBox.clicked.connect(self.update_markers)
+        self.ignitionCheckBox.clicked.connect(self.update_markers)
+        self.fullPowerCheckBox.clicked.connect(self.update_markers)
+        self.lowBatteryCheckBox.clicked.connect(self.update_markers)
+        self.reportPushButton.clicked.connect(self.module_identification)
+
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
         uic.loadUi('wind.ui', self)
