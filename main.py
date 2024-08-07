@@ -126,10 +126,6 @@ class MainApp(QMainWindow):
             self.canvas.draw()
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage de la puissance
 
-    def save_graph_as_image(self, filepath):
-        """Enregistre le graphique en tant qu'image PNG."""
-        self.canvas.figure.savefig(filepath, format='png')
-
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode, ajoute le graphique, et ferme la fenêtre."""
         try:
@@ -139,11 +135,12 @@ class MainApp(QMainWindow):
                 os.makedirs(directory)
 
             filename = f"power_consumption_{modulename}.xlsx"
+            imagename = f"power_graph_{modulename}.png"
             filepath = os.path.join(directory, filename)
-            image_path = os.path.join(directory, 'power_graph.png')  # Chemin pour l'image du graphique
+            imagepath = os.path.join(directory, imagename)  # Chemin pour l'image du graphique
 
             # Sauvegarder le graphique comme une image
-            self.save_graph_as_image(image_path)
+            self.canvas.figure.savefig(imagepath, format='png')
 
             workbook = Workbook()
             sheet = workbook.active
@@ -157,7 +154,7 @@ class MainApp(QMainWindow):
                 sheet.append([mode, max_power])
 
             # Ajouter l'image du graphique
-            img = Image(image_path)
+            img = Image(imagepath)
             sheet.add_image(img, 'E5')  # Positionner l'image à la cellule E5
 
             # Sauvegarder le fichier Excel
