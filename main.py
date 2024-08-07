@@ -6,6 +6,8 @@ import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5 import uic, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 
