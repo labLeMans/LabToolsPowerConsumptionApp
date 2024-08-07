@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ITxPT_Lab</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="3" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="moduleNameLabel">
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Module Name</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="moduleNameLineEdit">
+        <property name="maximumSize">
+         <size>
+          <width>500</width>
+          <height>30</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="5" column="0">
+     <widget class="QPushButton" name="reportPushButton">
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Report</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="checkBox_2">
+        <property name="styleSheet">
+         <string notr="true">QCheckBox:indicator{
+	width:50px;
+	height:50px;
+}
+
+QCheckBox:indicator:checked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_on.png&quot;);
+}
+
+QCheckBox:indicator:unchecked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_off.png&quot;);
+}</string>
+        </property>
+        <property name="text">
+         <string>Manual Switch</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_3">
+        <property name="styleSheet">
+         <string notr="true">QCheckBox:indicator{
+	width:50px;
+	height:50px;
+}
+
+QCheckBox:indicator:checked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_on.png&quot;);
+}
+
+QCheckBox:indicator:unchecked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_off.png&quot;);
+}</string>
+        </property>
+        <property name="text">
+         <string>Ignition</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_4">
+        <property name="styleSheet">
+         <string notr="true">QCheckBox:indicator{
+	width:50px;
+	height:50px;
+}
+
+QCheckBox:indicator:checked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_on.png&quot;);
+}
+
+QCheckBox:indicator:unchecked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_off.png&quot;);
+}</string>
+        </property>
+        <property name="text">
+         <string>Full Power</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox">
+        <property name="styleSheet">
+         <string notr="true">QCheckBox:indicator{
+	width:50px;
+	height:50px;
+}
+
+QCheckBox:indicator:checked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_on.png&quot;);
+}
+
+QCheckBox:indicator:unchecked{
+	image:url(&quot;/home/pc/Téléchargements/toggle_off.png&quot;);
+}</string>
+        </property>
+        <property name="text">
+         <string>Low Battery</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
