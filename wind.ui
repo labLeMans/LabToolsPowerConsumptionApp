@@ -42,7 +42,7 @@
       </item>
      </layout>
     </item>
-    <item row="5" column="0">
+    <item row="6" column="0">
      <widget class="QPushButton" name="reportPushButton">
       <property name="maximumSize">
        <size>
@@ -58,7 +58,7 @@
     <item row="4" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QCheckBox" name="checkBox_2">
+       <widget class="QCheckBox" name="manualSwitchCheckBox">
         <property name="styleSheet">
          <string notr="true">QCheckBox:indicator{
 	width:50px;
@@ -79,7 +79,7 @@ QCheckBox:indicator:unchecked{
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox_3">
+       <widget class="QCheckBox" name="ignitionCheckBox">
         <property name="styleSheet">
          <string notr="true">QCheckBox:indicator{
 	width:50px;
@@ -100,7 +100,7 @@ QCheckBox:indicator:unchecked{
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox_4">
+       <widget class="QCheckBox" name="fullPowerCheckBox">
         <property name="styleSheet">
          <string notr="true">QCheckBox:indicator{
 	width:50px;
@@ -121,7 +121,7 @@ QCheckBox:indicator:unchecked{
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="lowBatteryCheckBox">
         <property name="styleSheet">
          <string notr="true">QCheckBox:indicator{
 	width:50px;
@@ -142,6 +142,9 @@ QCheckBox:indicator:unchecked{
        </widget>
       </item>
      </layout>
+    </item>
+    <item row="5" column="0">
+     <layout class="QGridLayout" name="gridLayout_2"/>
     </item>
    </layout>
   </widget>
