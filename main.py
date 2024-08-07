@@ -5,7 +5,7 @@ import time
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 from PyQt5 import uic, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from bs4 import BeautifulSoup
@@ -18,8 +18,10 @@ class MplCanvas(FigureCanvas):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
+
 class MainApp(QMainWindow):
     power_updated = pyqtSignal(float)  # Signal personnalisé pour mettre à jour la puissance
+
     def __init__(self):
         super().__init__()
         self.load_ui()
@@ -27,24 +29,27 @@ class MainApp(QMainWindow):
         self.max_power = 0  # Initialiser la puissance maximale
         self.collecting_data = False  # Flag to check if data collection is ongoing
         self.power_data = {}  # Dictionnaire pour stocker la puissance maximale pour chaque mode
-        #self.modulename = modulename # Stocker le nom du module
         self.selected_item = "OFF"
-        self.power_updated.connect(self.update_power_display)# Connecter le signal power_updated à la méthode update_power_display
-        
+        self.power_updated.connect(self.update_power_display)  # Connecter le signal power_updated à la méthode update_power_display
+
         # Créer un widget pour contenir le canvas de matplotlib
         self.graphic_widget = QWidget()
         self.layout = QVBoxLayout(self.graphic_widget)
-        
+
         # Créer le canvas de matplotlib
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         self.layout.addWidget(self.canvas)
-        
+
         # Ajouter le widget de graphique dans le gridLayout_2
         self.gridLayout_2.addWidget(self.graphic_widget, 0, 0)
 
-        # Exemples de données à tracer
-        self.plot_example_data()
+        # Initialiser une liste pour stocker les données de puissance
+        self.power_values = []
 
+        # Configurer le QTimer pour mettre à jour les données toutes les secondes
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_graph)
+        self.timer.start(1000)  # Mettre à jour toutes les secondes
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -52,30 +57,24 @@ class MainApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
-        #self.manualSwitchCheckBox.clicked.connect()
-        #self.ignitionCheckBox.clicked.connect()
-        #self.fullPowerCheckBox.clicked.connect()
-        #self.lowBatteryCheckBox.clicked.connect()
         self.reportPushButton.clicked.connect(self.module_identification)
 
-    def module_identification(self, modulename):
+    def module_identification(self):
         """Vérification si le nom du module à bien été renseigné."""
-        modulename = self.moduleNameLineEdit.text().strip() # Récupère le nom du module dans la QLineEdit
+        modulename = self.moduleNameLineEdit.text().strip()  # Récupère le nom du module dans la QLineEdit
         if not modulename:
             # Affiche un message d'erreur si la QLineEdit est vide
             QMessageBox.warning(self, "Nom du module manquant", "Veuillez entrer le nom du module")
-            return # Empêche le passage à la fenêtre suivante
+            return  # Empêche le passage à la fenêtre suivante
         else:
-            self.generate_excel
+            self.generate_excel()
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
         url = 'http://192.168.0.2/Home.cgi'
         try:
-            # vérification de la connectivité à l'url
             response = requests.get(url)
             if response.status_code == 200:
-                # Extrait la valeur à partir du contenu de la page web
                 soup = BeautifulSoup(response.text, 'html.parser')
 
                 # Trouver l'input avec l'attribut id "actcur"
@@ -95,38 +94,40 @@ class MainApp(QMainWindow):
                 return power
             else:
                 print(f"Erreur {response.status_code} lors de la récupération de la page web de l'alimentation")
-                QMessageBox.warning(self, "Erreur {response.status_code} lors de la récupération de la page web de l'alimentation")
+                QMessageBox.warning(self, f"Erreur {response.status_code} lors de la récupération de la page web de l'alimentation")
                 return None
         except Exception as e:
             print(f"Erreur lors de la récupération de la valeur de puissance: {e}")
-            QMessageBox.warning(self, "Erreur lors de la récupération de la valeur de puissance: {e}")
+            QMessageBox.warning(self, f"Erreur lors de la récupération de la valeur de puissance: {e}")
             return None
-        
 
     def update_power_display(self, power):
         """Met à jour l'affichage de la puissance en temps réel."""
         self.selectedItemLabel.setText(f"Max Power: {power:.2f} W")
 
-    def plot_example_data(self):
-        # Exemple de tracé de données
-        import numpy as np
-        t = np.linspace(0, 10, 100)
-        y = np.sin(t)
-
-        self.canvas.axes.plot(t, y)
-        self.canvas.draw()
+    def update_graph(self):
+        """Met à jour le graphique avec les nouvelles données de puissance."""
+        power = self.fetch_power_value()
+        if power is not None:
+            self.power_values.append(power)
+            if len(self.power_values) > 100:  # Garder seulement les 100 dernières valeurs
+                self.power_values.pop(0)
+            self.canvas.axes.clear()
+            self.canvas.axes.plot(self.power_values, label='Power (W)')
+            self.canvas.axes.legend()
+            self.canvas.draw()
+            self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage de la puissance
 
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
         try:
-            # Créer le répertoire 'results' s'il n'existe pas
+            modulename = self.moduleNameLineEdit.text().strip()
             directory = 'results'
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
-            # Nom du fichier Excel avec le préfixe et le nom du module
-            filename = f"power_consumption_{self.modulename}.xlsx"
-            filepath = os.path.join(directory, filename) # chemin complet du fichier
+            filename = f"power_consumption_{modulename}.xlsx"
+            filepath = os.path.join(directory, filename)
 
             workbook = Workbook()
             sheet = workbook.active
@@ -139,21 +140,17 @@ class MainApp(QMainWindow):
             for mode, max_power in self.power_data.items():
                 sheet.append([mode, max_power])
 
-            # Sauvegarder le fichier avec le nom spécifié dans le QLineEdit
             workbook.save(filepath)
 
-            # Vérifier si le fichier a été créé correctement
             if os.path.isfile(filepath):
                 print(f"Fichier Excel '{filepath}' créé avec succès.")
-                # Fermer la fenêtre secondaire
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
         
         except Exception as e:
-            # Afficher un message d'erreur en cas d'exception
             print(f"Erreur lors de la création du fichier Excel : {e}")
-            QMessageBox.warning(self, "Erreur lors de la création du fichier Excel : {e}")
+            QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
             return None
 
 if __name__ == '__main__':
