@@ -9,6 +9,13 @@ from PyQt5.QtCore import pyqtSignal
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 
+
+class MplCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+
 class MainApp(QMainWindow):
     power_updated = pyqtSignal(float)  # Signal personnalisé pour mettre à jour la puissance
     def __init__(self):
@@ -21,6 +28,20 @@ class MainApp(QMainWindow):
         #self.modulename = modulename # Stocker le nom du module
         self.selected_item = "OFF"
         self.power_updated.connect(self.update_power_display)# Connecter le signal power_updated à la méthode update_power_display
+        
+        # Créer un widget pour contenir le canvas de matplotlib
+        self.graphic_widget = QWidget()
+        self.layout = QVBoxLayout(self.graphic_widget)
+        
+        # Créer le canvas de matplotlib
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.layout.addWidget(self.canvas)
+        
+        # Ajouter le widget de graphique dans le gridLayout_2
+        self.gridLayout_2.addWidget(self.graphic_widget, 0, 0)
+
+        # Exemples de données à tracer
+        self.plot_example_data()
 
 
     def load_ui(self):
@@ -83,6 +104,15 @@ class MainApp(QMainWindow):
     def update_power_display(self, power):
         """Met à jour l'affichage de la puissance en temps réel."""
         self.selectedItemLabel.setText(f"Max Power: {power:.2f} W")
+
+    def plot_example_data(self):
+        # Exemple de tracé de données
+        import numpy as np
+        t = np.linspace(0, 10, 100)
+        y = np.sin(t)
+
+        self.canvas.axes.plot(t, y)
+        self.canvas.draw()
 
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode et ferme la fenêtre."""
