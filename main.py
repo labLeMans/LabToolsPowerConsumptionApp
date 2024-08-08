@@ -3,6 +3,7 @@ import requests
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget, QPushButton, QDialog
 from PyQt5 import uic, QtCore
+from PyQt5.QtCore import pyqtSignal, QTimer
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from bs4 import BeautifulSoup
@@ -84,9 +85,6 @@ class MainApp(QMainWindow):
         self.lowBatteryCheckBox.clicked.connect(lambda: self.add_marker('lowBattery'))
         self.reportPushButton.clicked.connect(self.generate_excel)
 
-        # Connecter le signal de mise à jour de puissance à la méthode d'affichage
-        self.power_updated.connect(self.update_power_display)
-
     def show_fullscreen_graph(self):
         """Affiche la fenêtre de graphique en plein écran."""
         self.graph_window.showFullScreen()
@@ -109,7 +107,7 @@ class MainApp(QMainWindow):
             self.time_values.append(elapsed_time)
 
             # Garde seulement les 100 dernières valeurs
-            if len(self.power_values) > 100:
+            if len(self.power_values) > 100000:
                 self.power_values.pop(0)
                 self.time_values.pop(0)
 
@@ -164,10 +162,6 @@ class MainApp(QMainWindow):
         canvas.axes.set_ylabel("Power (W)")
         self.update_markers_on_canvas(canvas.axes)
         canvas.draw()
-
-    def update_power_display(self, power):
-        """Met à jour l'affichage de la puissance."""
-        self.powerLabel.setText(f"Max Power: {power:.2f} W")
 
     def generate_excel(self):
         """Génère un fichier Excel avec les données de puissance et les états des marqueurs."""
