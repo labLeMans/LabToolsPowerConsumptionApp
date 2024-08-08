@@ -52,7 +52,7 @@ class MainApp(QMainWindow):
         self.start_time = QtCore.QTime.currentTime()  # Enregistrer l'heure de départ
 
         # Exemples de données à tracer
-        self.plot_example_data()
+        #self.plot_example_data()
 
         # Ajouter les marqueurs
         self.markers = {
@@ -147,7 +147,7 @@ class MainApp(QMainWindow):
 
     def update_power_display(self, power):
         """Met à jour l'affichage de la puissance en temps réel."""
-        self.selectedItemLabel.setText(f"Max Power: {power:.2f} W")
+        self.powerLabel.setText(f"Max Power: {power:.2f} W")
 
     def update_graph(self):
         """Met à jour le graphique avec les nouvelles données de puissance."""
