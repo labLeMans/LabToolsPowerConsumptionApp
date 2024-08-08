@@ -222,8 +222,9 @@ class MainApp(QMainWindow):
             mid_time = (start_time + end_time) / 2
             axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", color='black', verticalalignment='bottom')
             
+    
     def generate_excel(self):
-        """Génère un fichier Excel avec les données de puissance, les états des marqueurs, et le graphique."""
+        """Génère un fichier Excel avec la puissance maximale pour chaque mode, ajoute le graphique, et ferme la fenêtre."""
         try:
             modulename = self.moduleNameLineEdit.text().strip()
             directory = 'results'
@@ -238,25 +239,17 @@ class MainApp(QMainWindow):
             # Sauvegarder le graphique comme une image
             self.canvas.figure.savefig(imagepath, format='png')
     
+            # Créer un nouveau classeur Excel
             workbook = Workbook()
-            sheet1 = workbook.active
-            sheet1.title = "Max Power Data"
+            # Supprimer la feuille par défaut
+            workbook.remove(workbook.active)
+
+            # Ajouter une nouvelle feuille pour les données
+            sheet = workbook.create_sheet(title="Max Power Data")
     
             # Ajouter des en-têtes
-            sheet1.append(["Mode", "Max Power (W)"])
-
-            # Ajouter les données de puissance maximale
-            for mode, max_power in self.power_data.items():
-                sheet1.append([mode, max_power])
+            sheet.append(["Marker Start", "Marker End", "Duration (s)", "Max Power (W)", "States"])
     
-            # Ajouter l'image du graphique
-            img = Image(imagepath)
-            sheet1.add_image(img, 'E5')  # Positionner l'image à la cellule E5
-    
-            # Ajouter une feuille pour les états des marqueurs et les consommations maximales
-            sheet2 = workbook.create_sheet(title="Marker States and Max Power")
-            sheet2.append(["Marker Start", "Marker End", "Duration (s)", "Max Power (W)", "States"])
-
             # Créer une liste combinée de tous les marqueurs
             combined_markers = []
             for marker_name, marker_data in self.markers.items():
@@ -264,8 +257,8 @@ class MainApp(QMainWindow):
     
             # Trier les marqueurs combinés par temps
             combined_markers.sort(key=lambda x: x[0])
-    
-            # Calculer la consommation maximale entre chaque paire de marqueurs adjacents
+
+            # Calculer le maximum entre chaque paire de marqueurs adjacents
             for i in range(len(combined_markers) - 1):
                 start_time = combined_markers[i][0]
                 end_time = combined_markers[i + 1][0]
@@ -274,18 +267,21 @@ class MainApp(QMainWindow):
                 max_power = max(self.power_values[start_idx:end_idx])
                 max_time = self.time_values[self.power_values.index(max_power)]
     
-                # Temps écoulé entre les deux marqueurs
+                # Calculer la durée entre les deux marqueurs
                 duration = end_time - start_time
     
-                # États des marqueurs entre les deux temps
-                marker_states = ', '.join(
-                    f"{name}: {state}" for name, marker_data in self.markers.items()
-                    for time, state in zip(marker_data['times'], marker_data['state'])
-                    if start_time <= time <= end_time
-                )
+                # Rassembler les états des marqueurs pendant cette période
+                states = ', '.join(f"{marker_data['label']}_{state}" 
+                                   for marker_name, marker_data in self.markers.items() 
+                                   for marker_time, state in zip(marker_data['times'], marker_data['state']) 
+                                   if start_time <= marker_time <= end_time)
+    
+                # Ajouter les données à la feuille
+                sheet.append([start_time, end_time, duration, max_power, states])
 
-                # Ajouter les informations à la feuille Excel
-                sheet2.append([start_time, end_time, duration, max_power, marker_states])
+            # Ajouter l'image du graphique
+            img = Image(imagepath)
+            sheet.add_image(img, 'G5')  # Positionner l'image à la cellule G5
     
             # Sauvegarder le fichier Excel
             workbook.save(filepath)
@@ -295,11 +291,12 @@ class MainApp(QMainWindow):
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
+    
+        except Exception as e:
+            print(f"Erreur lors de la création du fichier Excel : {e}")
+            QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
+            return None
 
-    except Exception as e:
-        print(f"Erreur lors de la création du fichier Excel : {e}")
-        QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
-        return None
 
            
 
