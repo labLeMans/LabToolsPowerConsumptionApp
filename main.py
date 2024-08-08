@@ -244,7 +244,7 @@ class MainApp(QMainWindow):
     
             # Ajouter des en-têtes
             sheet1.append(["Mode", "Max Power (W)"])
-    
+
             # Ajouter les données de puissance maximale
             for mode, max_power in self.power_data.items():
                 sheet1.append([mode, max_power])
@@ -256,7 +256,7 @@ class MainApp(QMainWindow):
             # Ajouter une feuille pour les états des marqueurs et les consommations maximales
             sheet2 = workbook.create_sheet(title="Marker States and Max Power")
             sheet2.append(["Marker Start", "Marker End", "Duration (s)", "Max Power (W)", "States"])
-    
+
             # Créer une liste combinée de tous les marqueurs
             combined_markers = []
             for marker_name, marker_data in self.markers.items():
@@ -264,7 +264,7 @@ class MainApp(QMainWindow):
     
             # Trier les marqueurs combinés par temps
             combined_markers.sort(key=lambda x: x[0])
-
+    
             # Calculer la consommation maximale entre chaque paire de marqueurs adjacents
             for i in range(len(combined_markers) - 1):
                 start_time = combined_markers[i][0]
@@ -279,11 +279,11 @@ class MainApp(QMainWindow):
     
                 # États des marqueurs entre les deux temps
                 marker_states = ', '.join(
-                    f"{name}: {state}" for name, times, states in self.markers.values()
-                    for time, state in zip(times, states)
+                    f"{name}: {state}" for name, marker_data in self.markers.items()
+                    for time, state in zip(marker_data['times'], marker_data['state'])
                     if start_time <= time <= end_time
                 )
-    
+
                 # Ajouter les informations à la feuille Excel
                 sheet2.append([start_time, end_time, duration, max_power, marker_states])
     
@@ -295,11 +295,13 @@ class MainApp(QMainWindow):
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
-    
-        except Exception as e:
-            print(f"Erreur lors de la création du fichier Excel : {e}")
-            QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
-            return None
+
+    except Exception as e:
+        print(f"Erreur lors de la création du fichier Excel : {e}")
+        QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
+        return None
+
+           
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
