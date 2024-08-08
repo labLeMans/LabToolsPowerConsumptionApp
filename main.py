@@ -36,6 +36,7 @@ class MainApp(QMainWindow):
         self.init_ui()
         self.init_graph()
         self.init_data()
+        self.init_csv()
         self.setup_connections()
 
     def init_ui(self):
@@ -77,6 +78,22 @@ class MainApp(QMainWindow):
         self.timer.timeout.connect(self.update_graph)
         self.timer.start(1000)
 
+    def init_csv(self):
+        """Initialise le fichier CSV pour enregistrer les données de consommation."""
+        modulename = self.moduleNameLineEdit.text().strip()
+        if not modulename:
+            modulename = "default"
+
+        directory = 'results'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        self.csv_filepath = os.path.join(directory, f"power_consumption_data_{modulename}.csv")
+        with open(self.csv_filepath, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Écrire l'en-tête
+            writer.writerow(["MainSwitch", "Ignition", "FullPower", "LowBattery", "MaxPower (W)", "Time (s)"])
+
     def setup_connections(self):
         """Configure les connexions entre les widgets et les fonctions."""
         self.manualSwitchCheckBox.clicked.connect(lambda: self.add_marker('manualSwitch'))
@@ -106,7 +123,7 @@ class MainApp(QMainWindow):
             self.power_values.append(power)
             self.time_values.append(elapsed_time)
 
-            # Garde seulement les 100 dernières valeurs
+            # Garde seulement les 100000 dernières valeurs
             if len(self.power_values) > 100000:
                 self.power_values.pop(0)
                 self.time_values.pop(0)
@@ -118,6 +135,9 @@ class MainApp(QMainWindow):
 
             self.update_graph_in_window(self.graph_window.canvas)
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage
+
+            # Ajouter les données au fichier CSV
+            self.update_csv(elapsed_time, power)
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
@@ -175,8 +195,8 @@ class MainApp(QMainWindow):
             if not os.path.exists(directory):
                 os.makedirs(directory)
     
-            filepath = os.path.join(directory, f"power_consumption_{modulename}.xlsx")
-            imagepath = os.path.join(directory, f"power_graph_{modulename}.png")
+            filepath = os.path.join(directory, f"power_consumption_report_{modulename}.xlsx")
+            imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
     
             # Sauvegarder le graphique comme une image
             self.canvas.figure.savefig(imagepath, format='png')
@@ -218,6 +238,21 @@ class MainApp(QMainWindow):
     
         except Exception as e:
             QMessageBox.warning(self, "Erreur", f"Erreur lors de la création du fichier Excel: {e}")
+
+    
+     def update_csv(self, elapsed_time, power):
+            """Met à jour le fichier CSV avec les données de consommation."""
+            with open(self.csv_filepath, mode='a', newline='') as file:
+                writer = csv.writer(file)
+    
+                # Déterminer les états des switches
+                main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
+                ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
+                full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
+                low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
+    
+                # Écrire une ligne dans le fichier CSV
+                writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
 
 
 if __name__ == '__main__':
