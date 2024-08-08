@@ -217,7 +217,10 @@ class MainApp(QMainWindow):
             end_idx = next(idx for idx, val in enumerate(self.time_values) if val >= end_time)
             max_power = max(self.power_values[start_idx:end_idx])
             max_time = self.time_values[self.power_values.index(max_power)]
-            axes.text(max_time, max_power, f"Max: {max_power:.2f} W", color='black', verticalalignment='bottom')
+            
+            # Calculer la position moyenne entre les deux marqueurs pour afficher le texte
+            mid_time = (start_time + end_time) / 2
+            axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", color='black', verticalalignment='bottom')
 
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode, ajoute le graphique, et ferme la fenêtre."""
