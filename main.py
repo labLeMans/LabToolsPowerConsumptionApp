@@ -52,24 +52,26 @@ class MainApp(QMainWindow):
 
         # Ajouter les marqueurs
         self.markers = {
-            'ignition': {'color': 'red', 'label': 'Ignition', 'times': []},
-            'fullPower': {'color': 'blue', 'label': 'Full Power', 'times': []},
-            'lowBattery': {'color': 'green', 'label': 'Low Battery', 'times': []},
-            'manualSwitch': {'color': 'orange', 'label': 'Manual Switch', 'times': []}
+            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': []},
+            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': []},
+            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': []},
+            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': []}
         }
 
-    def add_marker_time(self, marker_name):
-        """Enregistre le temps actuel pour un marqueur donné."""
+    def add_marker_time(self, marker_name, state):
+        """Enregistre le temps actuel pour un marqueur donné avec son état."""
         current_time = QtCore.QTime.currentTime()
         elapsed_time = self.start_time.secsTo(current_time)  # Temps écoulé en secondes
         self.markers[marker_name]['times'].append(elapsed_time)
+        self.markers[marker_name]['state'].append(state)
         self.update_graph()
 
     def update_markers(self):
         """Met à jour les marqueurs sur le graphique."""
         for marker_name, marker_data in self.markers.items():
-            for marker_time in marker_data['times']:
-                self.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=marker_data['label'])
+            for marker_time, state in zip(marker_data['times'], marker_data['state']):
+                self.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}_{state}")
+                self.canvas.axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -77,10 +79,10 @@ class MainApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
-        self.manualSwitchCheckBox.clicked.connect(lambda: self.add_marker_time('manualSwitch'))
-        self.ignitionCheckBox.clicked.connect(lambda: self.add_marker_time('ignition'))
-        self.fullPowerCheckBox.clicked.connect(lambda: self.add_marker_time('fullPower'))
-        self.lowBatteryCheckBox.clicked.connect(lambda: self.add_marker_time('lowBattery'))
+        self.manualSwitchCheckBox.clicked.connect(lambda: self.add_marker_time('manualSwitch', 'on' if self.manualSwitchCheckBox.isChecked() else 'off'))
+        self.ignitionCheckBox.clicked.connect(lambda: self.add_marker_time('ignition', 'on' if self.ignitionCheckBox.isChecked() else 'off'))
+        self.fullPowerCheckBox.clicked.connect(lambda: self.add_marker_time('fullPower', 'on' if self.fullPowerCheckBox.isChecked() else 'off'))
+        self.lowBatteryCheckBox.clicked.connect(lambda: self.add_marker_time('lowBattery', 'on' if self.lowBatteryCheckBox.isChecked() else 'off'))
         self.reportPushButton.clicked.connect(self.module_identification)
 
     def module_identification(self):
