@@ -16,7 +16,6 @@ class MplCanvas(FigureCanvas):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
-
 class MainApp(QMainWindow):
     power_updated = pyqtSignal(float)  # Signal personnalisé pour mettre à jour la puissance
 
@@ -51,9 +50,6 @@ class MainApp(QMainWindow):
         self.timer.start(1000)  # Mettre à jour toutes les secondes
         self.start_time = QtCore.QTime.currentTime()  # Enregistrer l'heure de départ
 
-        # Exemples de données à tracer
-        #self.plot_example_data()
-
         # Ajouter les marqueurs
         self.markers = {
             'ignition': {'color': 'red', 'label': 'Ignition'},
@@ -64,36 +60,21 @@ class MainApp(QMainWindow):
 
     def update_markers(self):
         """Met à jour les marqueurs sur le graphique en fonction de l'état des cases à cocher."""
-        # Effacer les marqueurs précédents
-        self.canvas.axes.clear()
-        
-        # Exemple de données
-        import numpy as np
-        t = np.linspace(0, 10, 100)
-        y = np.sin(t)
-        self.canvas.axes.plot(t, y, label='Data')
+        if not self.power_values:
+            return  # Si aucune donnée de puissance, ne rien faire
+
+        # Dernier temps enregistré pour positionner les marqueurs
+        last_time = self.time_values[-1]
 
         # Ajouter des marqueurs en fonction de l'état des cases
         if self.ignitionCheckBox.isChecked():
-            self.canvas.axes.plot(1, 1, 'o', color=self.markers['ignition']['color'], label=self.markers['ignition']['label'])
+            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['ignition']['color'], label=self.markers['ignition']['label'])
         if self.fullPowerCheckBox.isChecked():
-            self.canvas.axes.plot(2, 1, 'o', color=self.markers['fullPower']['color'], label=self.markers['fullPower']['label'])
+            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['fullPower']['color'], label=self.markers['fullPower']['label'])
         if self.lowBatteryCheckBox.isChecked():
-            self.canvas.axes.plot(3, 1, 'o', color=self.markers['lowBattery']['color'], label=self.markers['lowBattery']['label'])
+            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['lowBattery']['color'], label=self.markers['lowBattery']['label'])
         if self.manualSwitchCheckBox.isChecked():
-            self.canvas.axes.plot(4, 1, 'o', color=self.markers['manualSwitch']['color'], label=self.markers['manualSwitch']['label'])
-
-        # Afficher la légende
-        self.canvas.axes.legend()
-        self.canvas.draw()
-
-    def setup_connections(self):
-        """Configure les connexions des signaux et slots."""
-        self.manualSwitchCheckBox.clicked.connect(self.update_markers)
-        self.ignitionCheckBox.clicked.connect(self.update_markers)
-        self.fullPowerCheckBox.clicked.connect(self.update_markers)
-        self.lowBatteryCheckBox.clicked.connect(self.update_markers)
-        self.reportPushButton.clicked.connect(self.module_identification)
+            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['manualSwitch']['color'], label=self.markers['manualSwitch']['label'])
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -101,6 +82,10 @@ class MainApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
+        self.manualSwitchCheckBox.clicked.connect(self.update_markers)
+        self.ignitionCheckBox.clicked.connect(self.update_markers)
+        self.fullPowerCheckBox.clicked.connect(self.update_markers)
+        self.lowBatteryCheckBox.clicked.connect(self.update_markers)
         self.reportPushButton.clicked.connect(self.module_identification)
 
     def module_identification(self):
@@ -167,6 +152,10 @@ class MainApp(QMainWindow):
             self.canvas.axes.set_xlabel("Time (s)")
             self.canvas.axes.set_ylabel("Power (W)")
             self.canvas.axes.legend()
+
+            # Mettre à jour les marqueurs
+            self.update_markers()
+
             self.canvas.draw()
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage de la puissance
 
@@ -214,7 +203,6 @@ class MainApp(QMainWindow):
             print(f"Erreur lors de la création du fichier Excel : {e}")
             QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
             return None
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
