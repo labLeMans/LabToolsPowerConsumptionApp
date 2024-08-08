@@ -12,7 +12,7 @@ from openpyxl.drawing.image import Image
 
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        fig = Figure(figsize(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
 
@@ -52,29 +52,24 @@ class MainApp(QMainWindow):
 
         # Ajouter les marqueurs
         self.markers = {
-            'ignition': {'color': 'red', 'label': 'Ignition'},
-            'fullPower': {'color': 'blue', 'label': 'Full Power'},
-            'lowBattery': {'color': 'green', 'label': 'Low Battery'},
-            'manualSwitch': {'color': 'orange', 'label': 'Manual Switch'}
+            'ignition': {'color': 'red', 'label': 'Ignition', 'times': []},
+            'fullPower': {'color': 'blue', 'label': 'Full Power', 'times': []},
+            'lowBattery': {'color': 'green', 'label': 'Low Battery', 'times': []},
+            'manualSwitch': {'color': 'orange', 'label': 'Manual Switch', 'times': []}
         }
 
+    def add_marker_time(self, marker_name):
+        """Enregistre le temps actuel pour un marqueur donné."""
+        current_time = QtCore.QTime.currentTime()
+        elapsed_time = self.start_time.secsTo(current_time)  # Temps écoulé en secondes
+        self.markers[marker_name]['times'].append(elapsed_time)
+        self.update_graph()
+
     def update_markers(self):
-        """Met à jour les marqueurs sur le graphique en fonction de l'état des cases à cocher."""
-        if not self.power_values:
-            return  # Si aucune donnée de puissance, ne rien faire
-
-        # Dernier temps enregistré pour positionner les marqueurs
-        last_time = self.time_values[-1]
-
-        # Ajouter des marqueurs en fonction de l'état des cases
-        if self.ignitionCheckBox.isChecked():
-            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['ignition']['color'], label=self.markers['ignition']['label'])
-        if self.fullPowerCheckBox.isChecked():
-            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['fullPower']['color'], label=self.markers['fullPower']['label'])
-        if self.lowBatteryCheckBox.isChecked():
-            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['lowBattery']['color'], label=self.markers['lowBattery']['label'])
-        if self.manualSwitchCheckBox.isChecked():
-            self.canvas.axes.plot(last_time, self.power_values[-1], 'o', color=self.markers['manualSwitch']['color'], label=self.markers['manualSwitch']['label'])
+        """Met à jour les marqueurs sur le graphique."""
+        for marker_name, marker_data in self.markers.items():
+            for marker_time in marker_data['times']:
+                self.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=marker_data['label'])
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
@@ -82,10 +77,10 @@ class MainApp(QMainWindow):
 
     def setup_connections(self):
         """Configure les connexions des signaux et slots."""
-        self.manualSwitchCheckBox.clicked.connect(self.update_markers)
-        self.ignitionCheckBox.clicked.connect(self.update_markers)
-        self.fullPowerCheckBox.clicked.connect(self.update_markers)
-        self.lowBatteryCheckBox.clicked.connect(self.update_markers)
+        self.manualSwitchCheckBox.clicked.connect(lambda: self.add_marker_time('manualSwitch'))
+        self.ignitionCheckBox.clicked.connect(lambda: self.add_marker_time('ignition'))
+        self.fullPowerCheckBox.clicked.connect(lambda: self.add_marker_time('fullPower'))
+        self.lowBatteryCheckBox.clicked.connect(lambda: self.add_marker_time('lowBattery'))
         self.reportPushButton.clicked.connect(self.module_identification)
 
     def module_identification(self):
