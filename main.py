@@ -201,16 +201,23 @@ class MainApp(QMainWindow):
 
     def display_max_between_markers(self, axes):
         """Affiche le maximum de puissance entre les marqueurs."""
+        # Créer une liste combinée de tous les marqueurs
+        combined_markers = []
         for marker_name, marker_data in self.markers.items():
-            if len(marker_data['times']) >= 2:
-                for i in range(len(marker_data['times']) - 1):
-                    start_time = marker_data['times'][i]
-                    end_time = marker_data['times'][i + 1]
-                    start_idx = next(idx for idx, val in enumerate(self.time_values) if val >= start_time)
-                    end_idx = next(idx for idx, val in enumerate(self.time_values) if val >= end_time)
-                    max_power = max(self.power_values[start_idx:end_idx])
-                    max_time = self.time_values[self.power_values.index(max_power)]
-                    axes.text(max_time, max_power, f"Max: {max_power:.2f} W", color=marker_data['color'], verticalalignment='bottom')
+            combined_markers.extend(zip(marker_data['times'], [marker_data['label']] * len(marker_data['times']), marker_data['state']))
+
+        # Trier les marqueurs combinés par temps
+        combined_markers.sort(key=lambda x: x[0])
+
+        # Calculer le maximum entre chaque paire de marqueurs adjacents
+        for i in range(len(combined_markers) - 1):
+            start_time = combined_markers[i][0]
+            end_time = combined_markers[i + 1][0]
+            start_idx = next(idx for idx, val in enumerate(self.time_values) if val >= start_time)
+            end_idx = next(idx for idx, val in enumerate(self.time_values) if val >= end_time)
+            max_power = max(self.power_values[start_idx:end_idx])
+            max_time = self.time_values[self.power_values.index(max_power)]
+            axes.text(max_time, max_power, f"Max: {max_power:.2f} W", color='black', verticalalignment='bottom')
 
     def generate_excel(self):
         """Génère un fichier Excel avec la puissance maximale pour chaque mode, ajoute le graphique, et ferme la fenêtre."""
