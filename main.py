@@ -1,6 +1,7 @@
 import sys
 import requests
 import os
+import csv
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget, QPushButton, QDialog
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import pyqtSignal, QTimer
@@ -183,6 +184,22 @@ class MainApp(QMainWindow):
         self.update_markers_on_canvas(canvas.axes)
         canvas.draw()
 
+    def update_csv(self, elapsed_time, power):
+            """Met à jour le fichier CSV avec les données de consommation."""
+            with open(self.csv_filepath, mode='a', newline='') as file:
+                writer = csv.writer(file)
+
+                # Déterminer les états des switches
+                main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
+                ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
+                full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
+                low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
+
+                # Écrire une ligne dans le fichier CSV
+                writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
+
+
+
     def generate_excel(self):
         """Génère un fichier Excel avec les données de puissance et les états des marqueurs."""
         try:
@@ -240,21 +257,7 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Erreur", f"Erreur lors de la création du fichier Excel: {e}")
 
     
-     def update_csv(self, elapsed_time, power):
-            """Met à jour le fichier CSV avec les données de consommation."""
-            with open(self.csv_filepath, mode='a', newline='') as file:
-                writer = csv.writer(file)
-    
-                # Déterminer les états des switches
-                main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
-                ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
-                full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
-                low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-    
-                # Écrire une ligne dans le fichier CSV
-                writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
-
-
+        
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_window = MainApp()
