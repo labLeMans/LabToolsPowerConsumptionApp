@@ -221,125 +221,81 @@ class MainApp(QMainWindow):
             # Calculer la position moyenne entre les deux marqueurs pour afficher le texte
             mid_time = (start_time + end_time) / 2
             axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", color='black', verticalalignment='bottom')
-def generate_excel(self):
-    """Génère un fichier Excel avec les données de puissance, les états des marqueurs, et le graphique."""
-    try:
-        modulename = self.moduleNameLineEdit.text().strip()
-        directory = 'results'
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        filename = f"power_consumption_{modulename}.xlsx"
-        imagename = f"power_graph_{modulename}.png"
-        filepath = os.path.join(directory, filename)
-        imagepath = os.path.join(directory, imagename)  # Chemin pour l'image du graphique
-
-        # Sauvegarder le graphique comme une image
-        self.canvas.figure.savefig(imagepath, format='png')
-
-        workbook = Workbook()
-        sheet1 = workbook.active
-        sheet1.title = "Max Power Data"
-
-        # Ajouter des en-têtes
-        sheet1.append(["Mode", "Max Power (W)"])
-
-        # Ajouter les données de puissance maximale
-        for mode, max_power in self.power_data.items():
-            sheet1.append([mode, max_power])
-
-        # Ajouter l'image du graphique
-        img = Image(imagepath)
-        sheet1.add_image(img, 'E5')  # Positionner l'image à la cellule E5
-
-        # Ajouter une feuille pour les états des marqueurs et les consommations maximales
-        sheet2 = workbook.create_sheet(title="Marker States and Max Power")
-        sheet2.append(["Marker Start", "Marker End", "Duration (s)", "Max Power (W)", "States"])
-
-        # Créer une liste combinée de tous les marqueurs
-        combined_markers = []
-        for marker_name, marker_data in self.markers.items():
-            combined_markers.extend(zip(marker_data['times'], [marker_data['label']] * len(marker_data['times']), marker_data['state']))
-
-        # Trier les marqueurs combinés par temps
-        combined_markers.sort(key=lambda x: x[0])
-
-        # Calculer la consommation maximale entre chaque paire de marqueurs adjacents
-        for i in range(len(combined_markers) - 1):
-            start_time = combined_markers[i][0]
-            end_time = combined_markers[i + 1][0]
-            start_idx = next(idx for idx, val in enumerate(self.time_values) if val >= start_time)
-            end_idx = next(idx for idx, val in enumerate(self.time_values) if val >= end_time)
-            max_power = max(self.power_values[start_idx:end_idx])
-            max_time = self.time_values[self.power_values.index(max_power)]
-
-            # Temps écoulé entre les deux marqueurs
-            duration = end_time - start_time
-
-            # États des marqueurs entre les deux temps
-            marker_states = ', '.join(
-                f"{name}: {state}" for name, times, states in self.markers.values()
-                for time, state in zip(times, states)
-                if start_time <= time <= end_time
-            )
-
-            # Ajouter les informations à la feuille Excel
-            sheet2.append([start_time, end_time, duration, max_power, marker_states])
-
-        # Sauvegarder le fichier Excel
-        workbook.save(filepath)
-
-        if os.path.isfile(filepath):
-            print(f"Fichier Excel '{filepath}' créé avec succès.")
-            self.close()
-        else:
-            raise Exception("Le fichier Excel n'a pas été créé.")
-
-    except Exception as e:
-        print(f"Erreur lors de la création du fichier Excel : {e}")
-        QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
-        return None
-
+            
     def generate_excel(self):
-        """Génère un fichier Excel avec la puissance maximale pour chaque mode, ajoute le graphique, et ferme la fenêtre."""
+        """Génère un fichier Excel avec les données de puissance, les états des marqueurs, et le graphique."""
         try:
             modulename = self.moduleNameLineEdit.text().strip()
             directory = 'results'
             if not os.path.exists(directory):
                 os.makedirs(directory)
-
+    
             filename = f"power_consumption_{modulename}.xlsx"
             imagename = f"power_graph_{modulename}.png"
             filepath = os.path.join(directory, filename)
             imagepath = os.path.join(directory, imagename)  # Chemin pour l'image du graphique
-
+    
             # Sauvegarder le graphique comme une image
             self.canvas.figure.savefig(imagepath, format='png')
-
+    
             workbook = Workbook()
-            sheet = workbook.active
-            sheet.title = "Max Power Data"
-
+            sheet1 = workbook.active
+            sheet1.title = "Max Power Data"
+    
             # Ajouter des en-têtes
-            sheet.append(["Mode", "Max Power (W)"])
-
-            # Ajouter les données
+            sheet1.append(["Mode", "Max Power (W)"])
+    
+            # Ajouter les données de puissance maximale
             for mode, max_power in self.power_data.items():
-                sheet.append([mode, max_power])
-
+                sheet1.append([mode, max_power])
+    
             # Ajouter l'image du graphique
             img = Image(imagepath)
-            sheet.add_image(img, 'E5')  # Positionner l'image à la cellule E5
+            sheet1.add_image(img, 'E5')  # Positionner l'image à la cellule E5
+    
+            # Ajouter une feuille pour les états des marqueurs et les consommations maximales
+            sheet2 = workbook.create_sheet(title="Marker States and Max Power")
+            sheet2.append(["Marker Start", "Marker End", "Duration (s)", "Max Power (W)", "States"])
+    
+            # Créer une liste combinée de tous les marqueurs
+            combined_markers = []
+            for marker_name, marker_data in self.markers.items():
+                combined_markers.extend(zip(marker_data['times'], [marker_data['label']] * len(marker_data['times']), marker_data['state']))
+    
+            # Trier les marqueurs combinés par temps
+            combined_markers.sort(key=lambda x: x[0])
 
+            # Calculer la consommation maximale entre chaque paire de marqueurs adjacents
+            for i in range(len(combined_markers) - 1):
+                start_time = combined_markers[i][0]
+                end_time = combined_markers[i + 1][0]
+                start_idx = next(idx for idx, val in enumerate(self.time_values) if val >= start_time)
+                end_idx = next(idx for idx, val in enumerate(self.time_values) if val >= end_time)
+                max_power = max(self.power_values[start_idx:end_idx])
+                max_time = self.time_values[self.power_values.index(max_power)]
+    
+                # Temps écoulé entre les deux marqueurs
+                duration = end_time - start_time
+    
+                # États des marqueurs entre les deux temps
+                marker_states = ', '.join(
+                    f"{name}: {state}" for name, times, states in self.markers.values()
+                    for time, state in zip(times, states)
+                    if start_time <= time <= end_time
+                )
+    
+                # Ajouter les informations à la feuille Excel
+                sheet2.append([start_time, end_time, duration, max_power, marker_states])
+    
             # Sauvegarder le fichier Excel
             workbook.save(filepath)
-
+    
             if os.path.isfile(filepath):
                 print(f"Fichier Excel '{filepath}' créé avec succès.")
                 self.close()
             else:
                 raise Exception("Le fichier Excel n'a pas été créé.")
-
+    
         except Exception as e:
             print(f"Erreur lors de la création du fichier Excel : {e}")
             QMessageBox.warning(self, f"Erreur lors de la création du fichier Excel : {e}")
