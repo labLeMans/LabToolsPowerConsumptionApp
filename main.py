@@ -88,7 +88,6 @@ class MainApp(QMainWindow):
         self.graph_window.canvas.axes.set_ylabel("Power (W)")
         self.graph_window.canvas.axes.legend()
         self.update_markers_fullscreen()
-        self.display_max_between_markers(self.graph_window.canvas.axes)
         self.graph_window.canvas.draw()
 
     def update_markers_fullscreen(self):
@@ -97,6 +96,9 @@ class MainApp(QMainWindow):
             for marker_time, state in zip(marker_data['times'], marker_data['state']):
                 self.graph_window.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}_{state}")
                 self.graph_window.canvas.axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
+
+        # Afficher les maximas entre les marqueurs
+        self.display_max_between_markers(self.graph_window.canvas.axes)
 
     def add_marker_time(self, marker_name, state):
         """Enregistre le temps actuel pour un marqueur donné avec son état."""
@@ -108,17 +110,13 @@ class MainApp(QMainWindow):
 
     def update_markers(self):
         """Met à jour les marqueurs sur le graphique."""
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
         for marker_name, marker_data in self.markers.items():
             for marker_time, state in zip(marker_data['times'], marker_data['state']):
                 self.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}_{state}")
                 self.canvas.axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
+
+        # Afficher les maximas entre les marqueurs
         self.display_max_between_markers(self.canvas.axes)
-        self.canvas.set_xlabel("Time (s)")
-        self.canvas.set_ylabel("Power (W)")
-        self.canvas.legend()
-        self.canvas.draw()
 
     def load_ui(self):
         """Charge le fichier UI pour la fenêtre principale."""
