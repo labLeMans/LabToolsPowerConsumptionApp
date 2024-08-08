@@ -1,7 +1,7 @@
 import sys
 import requests
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget, QPushButton, QHBoxLayout, QDialog
 from PyQt5 import uic, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal, QTimer
 from matplotlib.figure import Figure
@@ -15,6 +15,15 @@ class MplCanvas(FigureCanvas):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
+
+class GraphWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Graph")
+        self.layout = QVBoxLayout(self)
+        self.canvas = MplCanvas(self, width=10, height=8, dpi=100)
+        self.layout.addWidget(self.canvas)
+        self.setLayout(self.layout)
 
 class MainApp(QMainWindow):
     power_updated = pyqtSignal(float)  # Signal personnalisé pour mettre à jour la puissance
@@ -40,6 +49,11 @@ class MainApp(QMainWindow):
         # Ajouter le widget de graphique dans le gridLayout_2
         self.gridLayout_2.addWidget(self.graphic_widget, 0, 0)
 
+        # Ajouter un bouton pour afficher le graphique en plein écran
+        self.fullscreen_button = QPushButton("Afficher le graphique en plein écran")
+        self.layout.addWidget(self.fullscreen_button)
+        self.fullscreen_button.clicked.connect(self.show_fullscreen_graph)
+
         # Initialiser une liste pour stocker les données de puissance
         self.power_values = []
         self.time_values = []
@@ -57,6 +71,31 @@ class MainApp(QMainWindow):
             'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': []},
             'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': []}
         }
+
+        # Initialiser la fenêtre de graphique en plein écran
+        self.graph_window = GraphWindow()
+
+    def show_fullscreen_graph(self):
+        """Affiche la fenêtre de graphique en plein écran."""
+        self.graph_window.showFullScreen()
+        self.update_fullscreen_graph()
+
+    def update_fullscreen_graph(self):
+        """Met à jour le graphique dans la fenêtre de graphique en plein écran."""
+        self.graph_window.canvas.axes.clear()
+        self.graph_window.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
+        self.graph_window.canvas.axes.set_xlabel("Time (s)")
+        self.graph_window.canvas.axes.set_ylabel("Power (W)")
+        self.graph_window.canvas.axes.legend()
+        self.update_markers_fullscreen()
+        self.graph_window.canvas.draw()
+
+    def update_markers_fullscreen(self):
+        """Met à jour les marqueurs sur le graphique en plein écran."""
+        for marker_name, marker_data in self.markers.items():
+            for marker_time, state in zip(marker_data['times'], marker_data['state']):
+                self.graph_window.canvas.axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}_{state}")
+                self.graph_window.canvas.axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
 
     def add_marker_time(self, marker_name, state):
         """Enregistre le temps actuel pour un marqueur donné avec son état."""
@@ -149,11 +188,9 @@ class MainApp(QMainWindow):
             self.canvas.axes.set_xlabel("Time (s)")
             self.canvas.axes.set_ylabel("Power (W)")
             self.canvas.axes.legend()
-
-            # Mettre à jour les marqueurs
             self.update_markers()
-
             self.canvas.draw()
+            self.update_fullscreen_graph()
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage de la puissance
 
     def generate_excel(self):
