@@ -1,0 +1,9 @@
+[Desktop Entry]
+version=1.0
+Name=AppConso 
+Comment=mesure de la consommation des modules ITxPT
+Exec=python3 /home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/main.py
+Icon=/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/image/ITxPT-icone.png
+Terminal=false
+Type=Application
+Categories=Utility;Application
