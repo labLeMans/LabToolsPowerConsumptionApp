@@ -67,9 +67,9 @@ class MainApp(QMainWindow):
 
         # Dictionnaire pour stocker les marqueurs
         self.markers = {
-            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': []},
-            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': []},
-            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': []},
+            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': ['off']},
+            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': ['off']},
+            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': ['off']},
             'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['off']}
         }
 
@@ -269,15 +269,6 @@ class MainApp(QMainWindow):
         self.time_values.clear()
         self.init_data()  # Réinitialise les marqueurs et les données
 
-        # Réinitialiser les marqueurs pour refléter l'état initial des cases à cocher
-        self.markers['manualSwitch']['times'].clear()
-        self.markers['manualSwitch']['state'].clear()
-        self.markers['ignition']['times'].clear()
-        self.markers['ignition']['state'].clear()
-        self.markers['fullPower']['times'].clear()
-        self.markers['fullPower']['state'].clear()
-        self.markers['lowBattery']['times'].clear()
-        self.markers['lowBattery']['state'].clear()
         self.timer.start(1000)  # Commence la mise à jour du graphique toutes les secondes
 
 if __name__ == '__main__':
