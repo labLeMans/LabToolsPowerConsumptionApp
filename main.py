@@ -146,7 +146,7 @@ class MainApp(QMainWindow):
         for marker_name, marker_data in self.markers.items():
             for marker_time, state in zip(marker_data['times'], marker_data['state']):
                 axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}_{state}")
-                axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90)
+                axes.text(marker_time, 0, f"{marker_data['label']}_{state}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
         self.display_max_between_markers(axes)
 
     def display_max_between_markers(self, axes):
