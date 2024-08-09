@@ -41,7 +41,7 @@ class MainApp(QMainWindow):
 
     def init_ui(self):
         """Initialise l'interface utilisateur."""
-        uic.loadUi('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/wind.ui', self)
+        uic.loadUi('wind.ui', self)
 
     def init_graph(self):
         """Initialise le graphique."""
@@ -76,7 +76,7 @@ class MainApp(QMainWindow):
         # Timer pour mettre à jour le graphique toutes les secondes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
-        self.timer.start(1000)
+        # self.timer.start(1000)  # Déplacer le démarrage dans la méthode start_measurement
 
     def setup_connections(self):
         """Configure les connexions entre les widgets et les fonctions."""
@@ -85,6 +85,7 @@ class MainApp(QMainWindow):
         self.fullPowerCheckBox.clicked.connect(lambda: self.add_marker('fullPower'))
         self.lowBatteryCheckBox.clicked.connect(lambda: self.add_marker('lowBattery'))
         self.reportPushButton.clicked.connect(self.generate_report)
+        self.pushButton.clicked.connect(self.start_measurement)  # Connexion du bouton Start
 
     def show_fullscreen_graph(self):
         """Affiche la fenêtre de graphique en plein écran."""
@@ -179,85 +180,95 @@ class MainApp(QMainWindow):
             full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
             low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
 
-            # Écrire une ligne dans le fichier CSV
+            # Écrire la ligne dans le CSV
             writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
 
     def generate_report(self):
-        """Génère le rapport Excel et le fichier CSV."""
-        self.create_csv()  # Créer le fichier CSV avant de générer le rapport
-        self.generate_excel()
-
-    def create_csv(self):
-        """Crée un fichier CSV pour enregistrer les données de consommation."""
+        """Génère les trois documents dans le répertoire results/{nom du module}."""
         modulename = self.moduleNameLineEdit.text().strip()
         if not modulename:
-            modulename = "default"
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module")
+            return
 
-        directory = 'results'
+        # Créer le répertoire results/{nom du module}
+        directory = os.path.join('results', modulename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+        # Générer les fichiers
+        self.generate_csv(directory, modulename)
+        self.save_graph_image(directory, modulename)
+        self.generate_excel(directory, modulename)
+
+    def generate_csv(self, directory, modulename):
+        """Génère le fichier CSV."""
         self.csv_filepath = os.path.join(directory, f"power_consumption_data_{modulename}.csv")
         with open(self.csv_filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
             # Écrire l'en-tête
             writer.writerow(["MainSwitch", "Ignition", "FullPower", "LowBattery", "MaxPower (W)", "Time (s)"])
 
-    def generate_excel(self):
+    def save_graph_image(self, directory, modulename):
+        """Sauvegarde le graphique en tant qu'image PNG."""
+        imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
+        self.canvas.figure.savefig(imagepath, format='png')
+
+    def generate_excel(self, directory, modulename):
         """Génère un fichier Excel avec les données de puissance et les états des marqueurs."""
         try:
-            modulename = self.moduleNameLineEdit.text().strip()
-            if not modulename:
-                QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module")
-                return
-    
-            directory = 'results'
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-    
             filepath = os.path.join(directory, f"power_consumption_report_{modulename}.xlsx")
             imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
-    
-            # Sauvegarder le graphique comme une image
-            self.canvas.figure.savefig(imagepath, format='png')
-    
+
             # Créer le fichier Excel
             workbook = Workbook()
-    
+
             # Récupérer la feuille par défaut
             sheet = workbook.active
-    
+
             # Renommer la feuille par défaut
             sheet.title = "Max Power Data"
-    
+
             # Ajouter les en-têtes
             sheet.append(["Manual Switch", "Ignition", "Full Power", "Low Battery", "Max Power (W)", "Duration (s)"])
-    
+
             combined_markers = [(t, l, s) for m in self.markers.values() for t, l, s in zip(m['times'], [m['label']] * len(m['times']), m['state'])]
             combined_markers.sort(key=lambda x: x[0])
-    
+
             for i in range(len(combined_markers) - 1):
                 start_time, end_time = combined_markers[i][0], combined_markers[i + 1][0]
                 max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
                 duration = end_time - start_time
-    
+
                 states = {name: 'off' for name in ['manualSwitch', 'ignition', 'fullPower', 'lowBattery']}
                 for t, l, s in combined_markers:
                     if start_time <= t <= end_time:
                         for name, marker in self.markers.items():
                             if l == marker['label']:
                                 states[name] = s
-    
+
                 sheet.append([states['manualSwitch'], states['ignition'], states['fullPower'], states['lowBattery'], max_power, duration])
-    
+
             img = Image(imagepath)
             sheet.add_image(img, 'G5')
-    
+
             workbook.save(filepath)
             print(f"Fichier Excel '{filepath}' créé avec succès.")
-    
+
         except Exception as e:
             QMessageBox.warning(self, "Erreur", f"Erreur lors de la création du fichier Excel: {e}")
+
+    def start_measurement(self):
+        """Démarre la mesure de la consommation."""
+        modulename = self.moduleNameLineEdit.text().strip()
+        if not modulename:
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de commencer.")
+            return
+        
+        self.start_time = QtCore.QTime.currentTime()  # Réinitialise l'heure de départ
+        self.power_values.clear()
+        self.time_values.clear()
+        self.init_data()  # Réinitialise les marqueurs et les données
+        self.timer.start(1000)  # Commence la mise à jour du graphique toutes les secondes
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
