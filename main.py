@@ -41,7 +41,7 @@ class MainApp(QMainWindow):
 
     def init_ui(self):
         """Initialise l'interface utilisateur."""
-        uic.loadUi('wind.ui', self)
+        uic.loadUi('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/wind.ui', self)
 
     def init_graph(self):
         """Initialise le graphique."""
