@@ -2,9 +2,10 @@ import sys
 import requests
 import os
 import csv
+import time
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QVBoxLayout, QWidget, QPushButton, QDialog
 from PyQt5 import uic, QtCore
-from PyQt5.QtCore import pyqtSignal, QTimer
+from PyQt5.QtCore import pyqtSignal, QThread, QTimer
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from bs4 import BeautifulSoup
@@ -27,6 +28,45 @@ class GraphWindow(QDialog):
         self.canvas = MplCanvas(self, width=10, height=8, dpi=100)
         layout.addWidget(self.canvas)
         self.setLayout(layout)
+
+class MeasurementThread(QThread):
+    update_csv_signal = pyqtSignal(float, float)  # Signal émis à chaque seconde avec le temps écoulé et la puissance
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.running = False
+        self.csv_filepath = ""
+        self.start_time = time.time()
+
+    def run(self):
+        self.running = True
+        while self.running:
+            elapsed_time = time.time() - self.start_time
+            power = self.fetch_power_value()
+
+            if power is not None:
+                self.update_csv_signal.emit(elapsed_time, power)
+            
+            time.sleep(1)
+
+    def stop(self):
+        self.running = False
+
+    def fetch_power_value(self):
+        """Récupère la valeur de puissance actuelle depuis l'URL."""
+        url = 'http://192.168.0.2/Home.cgi'
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                current = float(soup.find('input', {'id': 'actcur'})['value'].replace(' A', ''))
+                voltage = float(soup.find('input', {'id': 'actvol'})['value'].replace(' V', ''))
+                return current * voltage  # Calcul de la puissance
+            else:
+                raise Exception(f"Erreur {response.status_code}")
+        except Exception as e:
+            QMessageBox.warning(None, "Erreur", f"Erreur lors de la récupération de la puissance: {e}")
+            return None
 
 # Classe principale de l'application
 class MainApp(QMainWindow):
@@ -76,7 +116,6 @@ class MainApp(QMainWindow):
         # Timer pour mettre à jour le graphique toutes les secondes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
-        # self.timer.start(1000)  # Déplacer le démarrage dans la méthode start_measurement
 
     def setup_connections(self):
         """Configure les connexions entre les widgets et les fonctions."""
@@ -102,44 +141,19 @@ class MainApp(QMainWindow):
 
     def update_graph(self):
         """Récupère la puissance et met à jour le graphique."""
-        power = self.fetch_power_value()
-        if power is not None:
-            elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
-            self.power_values.append(power)
-            self.time_values.append(elapsed_time)
+        if not self.power_values:
+            return
 
-            # Garde seulement les 100000 dernières valeurs
-            if len(self.power_values) > 100000:
-                self.power_values.pop(0)
-                self.time_values.pop(0)
+        self.canvas.axes.clear()
+        self.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
+        self.update_markers_on_canvas(self.canvas.axes)
+        self.canvas.draw()
 
-            self.canvas.axes.clear()
-            self.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
-            self.update_markers_on_canvas(self.canvas.axes)
-            self.canvas.draw()
+        self.update_graph_in_window(self.graph_window.canvas)
 
-            self.update_graph_in_window(self.graph_window.canvas)
-            self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage
-
-            # Ajouter les données au fichier CSV si le fichier CSV a été créé
-            if hasattr(self, 'csv_filepath'):
-                self.update_csv(elapsed_time, power)
-
-    def fetch_power_value(self):
-        """Récupère la valeur de puissance actuelle depuis l'URL."""
-        url = 'http://192.168.0.2/Home.cgi'
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                current = float(soup.find('input', {'id': 'actcur'})['value'].replace(' A', ''))
-                voltage = float(soup.find('input', {'id': 'actvol'})['value'].replace(' V', ''))
-                return current * voltage  # Calcul de la puissance
-            else:
-                raise Exception(f"Erreur {response.status_code}")
-        except Exception as e:
-            QMessageBox.warning(self, "Erreur", f"Erreur lors de la récupération de la puissance: {e}")
-            return None
+        # Ajouter les données au fichier CSV si le fichier CSV a été créé
+        if hasattr(self, 'csv_filepath'):
+            self.update_csv(self.start_time.secsTo(QtCore.QTime.currentTime()), self.power_values[-1])
 
     def update_markers_on_canvas(self, axes):
         """Met à jour les marqueurs sur le graphique."""
@@ -206,7 +220,7 @@ class MainApp(QMainWindow):
         with open(self.csv_filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
             # Écrire l'en-tête
-            writer.writerow(["MainSwitch", "Ignition", "FullPower", "LowBattery", "MaxPower (W)", "Time (s)"])
+            writer.writerow(["MainSwitch", "Ignition", "FullPower", "LowBattery", "Power (W)", "Time (s)"])
 
     def save_graph_image(self, directory, modulename):
         """Sauvegarde le graphique en tant qu'image PNG."""
@@ -269,6 +283,19 @@ class MainApp(QMainWindow):
         self.time_values.clear()
         self.init_data()  # Réinitialise les marqueurs et les données
         self.timer.start(1000)  # Commence la mise à jour du graphique toutes les secondes
+
+        # Démarrer le thread de mesure
+        self.measurement_thread = MeasurementThread()
+        self.measurement_thread.update_csv_signal.connect(self.update_csv)
+        self.measurement_thread.csv_filepath = self.csv_filepath
+        self.measurement_thread.start()
+
+    def closeEvent(self, event):
+        """Arrête le thread de mesure lors de la fermeture de l'application."""
+        if hasattr(self, 'measurement_thread'):
+            self.measurement_thread.stop()
+            self.measurement_thread.wait()
+        event.accept()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
