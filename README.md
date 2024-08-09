@@ -17,3 +17,5 @@ python3 -m venv myenv
 source myenv/bin/avtivate
 ## Installer module openpyxl
 pip install openpyxl
+## Raccourci sur le bureau
+il suffit coller le fichier .desktop dans le répertoire bureau
