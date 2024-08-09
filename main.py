@@ -41,7 +41,7 @@ class MainApp(QMainWindow):
 
     def init_ui(self):
         """Initialise l'interface utilisateur."""
-        uic.loadUi('wind.ui', self)
+        uic.loadUi('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/wind.ui', self)
 
     def init_graph(self):
         """Initialise le graphique."""
@@ -70,7 +70,7 @@ class MainApp(QMainWindow):
             'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': []},
             'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': []},
             'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': []},
-            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': []}
+            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['off']}
         }
 
         # Timer pour mettre à jour le graphique toutes les secondes
@@ -191,7 +191,7 @@ class MainApp(QMainWindow):
             return
 
         # Créer le répertoire results/{nom du module}
-        directory = os.path.join('results', modulename)
+        directory = os.path.join('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results', modulename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
