@@ -67,10 +67,10 @@ class MainApp(QMainWindow):
 
         # Dictionnaire pour stocker les marqueurs
         self.markers = {
-            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': ['off']},
-            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': ['off']},
-            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': ['off']},
-            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['off']}
+            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': ['']},
+            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': ['']},
+            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': ['']},
+            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['']}
         }
 
         # Timer pour mettre à jour le graphique toutes les secondes
