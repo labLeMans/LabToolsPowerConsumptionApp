@@ -43,6 +43,12 @@ class MainApp(QMainWindow):
         """Initialise l'interface utilisateur."""
         uic.loadUi('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/wind.ui', self)
 
+        # Désactiver les switchs au démarrage
+        self.manualSwitchCheckBox.setEnabled(False)
+        self.ignitionCheckBox.setEnabled(False)
+        self.fullPowerCheckBox.setEnabled(False)
+        self.lowBatteryCheckBox.setEnabled(False)
+
     def init_graph(self):
         """Initialise le graphique."""
         self.graphic_widget = QWidget()
@@ -272,6 +278,12 @@ class MainApp(QMainWindow):
         self.start_time = QtCore.QTime.currentTime()
         self.power_values = []
         self.time_values = []
+    
+        # Activer les switchs une fois la mesure démarrée
+        self.manualSwitchCheckBox.setEnabled(True)
+        self.ignitionCheckBox.setEnabled(True)
+        self.fullPowerCheckBox.setEnabled(True)
+        self.lowBatteryCheckBox.setEnabled(True)
 
         self.timer.start(1000)  # Met à jour toutes les secondes
 
