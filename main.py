@@ -1,3 +1,105 @@
+Pour adapter le code afin de ne conserver que les lignes où l'état des signaux change, et pour inclure des informations sur le temps écoulé entre les changements d'état ainsi que la puissance maximale enregistrée entre ces changements, nous devons apporter quelques modifications importantes. Voici les étapes clés pour mettre en œuvre ces modifications :
+
+1. **Détection des changements d'état** : Nous devons modifier la méthode de mise à jour des données pour suivre les changements d'état des signaux et enregistrer les données pertinentes.
+2. **Gestion des fichiers CSV et Excel** : Nous devons ajuster la génération du rapport pour inclure uniquement les lignes où les états des signaux changent, avec les informations demandées.
+
+### Modifications nécessaires :
+
+#### 1. Détection des changements d'état
+
+Ajoutons une méthode pour détecter les changements d'état des signaux et enregistrer les informations nécessaires :
+
+```python
+def detect_state_changes(self):
+    """Détecte les changements d'état des signaux et calcule les temps écoulés et la puissance maximale."""
+    changes = []
+    last_states = {
+        'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+        'ignition': self.ignitionCheckBox.isChecked(),
+        'fullPower': self.fullPowerCheckBox.isChecked(),
+        'lowBattery': self.lowBatteryCheckBox.isChecked()
+    }
+    last_time = 0
+    max_power = float('-inf')
+
+    for i in range(len(self.time_values)):
+        current_time = self.time_values[i]
+        current_power = self.power_values[i]
+
+        # Mettre à jour la puissance maximale si nécessaire
+        if current_time >= last_time:
+            max_power = max(max_power, current_power)
+        
+        current_states = {
+            'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+            'ignition': self.ignitionCheckBox.isChecked(),
+            'fullPower': self.fullPowerCheckBox.isChecked(),
+            'lowBattery': self.lowBatteryCheckBox.isChecked()
+        }
+
+        # Vérifier les changements d'état
+        if any(last_states[signal] != current_states[signal] for signal in last_states):
+            elapsed_time = current_time - last_time
+            changes.append([
+                ' | '.join([f"{signal}: {'On' if current_states[signal] else 'Off'}" for signal in last_states]),
+                ' | '.join([f"{signal}: {'On' if last_states[signal] else 'Off'}" for signal in last_states]),
+                f"{elapsed_time:.2f}",
+                f"{max_power:.2f}",
+                f"{current_time:.2f}"
+            ])
+            # Réinitialiser les valeurs
+            last_time = current_time
+            max_power = float('-inf')
+            last_states = current_states
+
+    return changes
+```
+
+#### 2. Mise à jour du fichier Excel
+
+Nous devons maintenant mettre à jour la méthode `generate_report` pour utiliser la nouvelle méthode `detect_state_changes` :
+
+```python
+def generate_report(self):
+    """Génère le rapport à partir des fichiers CSV et Excel."""
+    if not hasattr(self, 'csv_filepath'):
+        QMessageBox.warning(self, "Erreur", "Veuillez cliquer sur start pour commencer la mesure.")
+        return
+
+    # Sauvegarder le graphique en tant qu'image
+    self.save_graph_as_image()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "State Changes"
+
+    # Ajouter les en-têtes à la feuille "State Changes"
+    ws.append(["Signal States", "Previous States", "Elapsed Time (s)", "Max Power (W)", "Time (s)"])
+
+    # Filtrer et ajouter uniquement les changements d'état
+    changes = self.detect_state_changes()
+    for change in changes:
+        ws.append(change)
+
+    # Ajout du graphique dans le rapport
+    if os.path.exists(self.graph_image_filepath):
+        img = Image(self.graph_image_filepath)
+        ws.add_image(img, 'F10')
+    else:
+        QMessageBox.warning(self, "Erreur", "L'image du graphique n'a pas été trouvée.")
+
+    # Sauvegarder le fichier Excel
+    wb.save(self.excel_filepath)
+    QMessageBox.information(self, "Succès", f"Rapport généré: {self.excel_filepath}")
+```
+
+#### 3. Ajustements additionnels
+
+Assurez-vous que les données sont correctement mises à jour et que les fichiers CSV et Excel sont correctement initialisés avant de sauvegarder les rapports. Vous devez également vous assurer que les chemins des fichiers sont corrects et accessibles.
+
+Voici le code complet avec les modifications intégrées :
+
+```python
 import sys
 import requests
 import os
@@ -108,7 +210,9 @@ class MainApp(QMainWindow):
             self.time_values.append(elapsed_time)
 
             # Garde seulement les 100000 dernières valeurs
-            if len(self.power_values) > 100000:
+            if len(self.power_values) > 
+
+100000:
                 self.power_values.pop(0)
                 self.time_values.pop(0)
 
@@ -237,6 +341,49 @@ class MainApp(QMainWindow):
         # Démarrer le timer pour mettre à jour le graphique toutes les secondes
         self.timer.start(1000)
 
+    def detect_state_changes(self):
+        """Détecte les changements d'état des signaux et calcule les temps écoulés et la puissance maximale."""
+        changes = []
+        last_states = {
+            'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+            'ignition': self.ignitionCheckBox.isChecked(),
+            'fullPower': self.fullPowerCheckBox.isChecked(),
+            'lowBattery': self.lowBatteryCheckBox.isChecked()
+        }
+        last_time = 0
+        max_power = float('-inf')
+
+        for i in range(len(self.time_values)):
+            current_time = self.time_values[i]
+            current_power = self.power_values[i]
+
+            # Mettre à jour la puissance maximale si nécessaire
+            if current_time >= last_time:
+                max_power = max(max_power, current_power)
+            
+            current_states = {
+                'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+                'ignition': self.ignitionCheckBox.isChecked(),
+                'fullPower': self.fullPowerCheckBox.isChecked(),
+                'lowBattery': self.lowBatteryCheckBox.isChecked()
+            }
+
+            # Vérifier les changements d'état
+            if any(last_states[signal] != current_states[signal] for signal in last_states):
+                elapsed_time = current_time - last_time
+                changes.append([
+                    ' | '.join([f"{signal}: {'On' if current_states[signal] else 'Off'}" for signal in last_states]),
+                    ' | '.join([f"{signal}: {'On' if last_states[signal] else 'Off'}" for signal in last_states]),
+                    f"{elapsed_time:.2f}",
+                    f"{max_power:.2f}",
+                    f"{current_time:.2f}"
+                ])
+                # Réinitialiser les valeurs
+                last_time = current_time
+                max_power = float('-inf')
+                last_states = current_states
+
+        return changes
 
     def generate_report(self):
         """Génère le rapport à partir des fichiers CSV et Excel."""
@@ -249,20 +396,24 @@ class MainApp(QMainWindow):
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "Consumption Data"
+        ws.title = "State Changes"
 
-        # Copier les données CSV dans Excel
-        with open(self.csv_filepath, 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                ws.append(row)
+        # Ajouter les en-têtes à la feuille "State Changes"
+        ws.append(["Signal States", "Previous States", "Elapsed Time (s)", "Max Power (W)", "Time (s)"])
 
-        # Ajout des marqueurs à un autre onglet
-        ws_markers = wb.create_sheet(title="Markers")
-        ws_markers.append(["Marker", "State", "Time (s)"])
-        for marker_name, marker_data in self.markers.items():
-            for marker_time, state in zip(marker_data['times'], marker_data['state']):
-                ws_markers.append([marker_name, state, marker_time])
+        # Filtrer et ajouter uniquement les changements d'état
+        changes = self.detect_state_changes()
+        for change in changes:
+            ws.append(change)
+
+        # Ajout du graphique dans le rapport
+        if os.path.exists(self.graph_image_filepath):
+            img = Image(self.graph_image_filepath)
+            ws.add_image(img, 'F10')
+        else:
+            QMessageBox.warning(self, "Erreur", "L'image du
+
+ graphique n'a pas été trouvée.")
 
         # Sauvegarder le fichier Excel
         wb.save(self.excel_filepath)
@@ -275,7 +426,6 @@ class MainApp(QMainWindow):
         
         # Créez une image du graphique
         self.canvas.figure.savefig(self.graph_image_filepath, format='png')
-
 
 # Application
 def main():
