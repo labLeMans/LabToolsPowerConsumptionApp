@@ -76,7 +76,6 @@ class MainApp(QMainWindow):
         # Timer pour mettre à jour le graphique toutes les secondes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
-        # self.timer.start(1000)  # Déplacer le démarrage dans la méthode start_measurement
 
     def setup_connections(self):
         """Configure les connexions entre les widgets et les fonctions."""
@@ -170,7 +169,7 @@ class MainApp(QMainWindow):
         canvas.draw()
 
     def update_csv(self, elapsed_time, power):
-        """Met à jour le fichier CSV avec les données de consommation."""
+        """Met à jour le fichier CSV et Excel avec les données de consommation."""
         with open(self.csv_filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
 
@@ -183,98 +182,81 @@ class MainApp(QMainWindow):
             # Écrire la ligne dans le CSV
             writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
 
-    def generate_report(self):
-        """Génère les trois documents dans le répertoire results/{nom du module}."""
-        modulename = self.moduleNameLineEdit.text().strip()
-        if not modulename:
-            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module")
-            return
+        # Mettre à jour le fichier Excel également
+        if hasattr(self, 'excel_filepath'):
+            self.update_excel(elapsed_time, power)
 
-        # Créer le répertoire results/{nom du module}
-        directory = os.path.join('/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results', modulename)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    def update_excel(self, elapsed_time, power):
+        """Met à jour le fichier Excel avec les données."""
+        wb = Workbook()
+        ws = wb.active
+        ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
+        
+        # Copie des données du CSV dans l'Excel
+        with open(self.csv_filepath, mode='r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                ws.append(row)
 
-        # Générer les fichiers
-        self.generate_csv(directory, modulename)
-        self.save_graph_image(directory, modulename)
-        self.generate_excel(directory, modulename)
-
-    def generate_csv(self, directory, modulename):
-        """Génère le fichier CSV."""
-        self.csv_filepath = os.path.join(directory, f"power_consumption_data_{modulename}.csv")
-        with open(self.csv_filepath, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            # Écrire l'en-tête
-            writer.writerow(["MainSwitch", "Ignition", "FullPower", "LowBattery", "MaxPower (W)", "Time (s)"])
-
-    def save_graph_image(self, directory, modulename):
-        """Sauvegarde le graphique en tant qu'image PNG."""
-        imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
-        self.canvas.figure.savefig(imagepath, format='png')
-
-    def generate_excel(self, directory, modulename):
-        """Génère un fichier Excel avec les données de puissance et les états des marqueurs."""
-        try:
-            filepath = os.path.join(directory, f"power_consumption_report_{modulename}.xlsx")
-            imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
-
-            # Créer le fichier Excel
-            workbook = Workbook()
-
-            # Récupérer la feuille par défaut
-            sheet = workbook.active
-
-            # Renommer la feuille par défaut
-            sheet.title = "Max Power Data"
-
-            # Ajouter les en-têtes
-            sheet.append(["Manual Switch", "Ignition", "Full Power", "Low Battery", "Max Power (W)", "Duration (s)"])
-
-            combined_markers = [(t, l, s) for m in self.markers.values() for t, l, s in zip(m['times'], [m['label']] * len(m['times']), m['state'])]
-            combined_markers.sort(key=lambda x: x[0])
-
-            for i in range(len(combined_markers) - 1):
-                start_time, end_time = combined_markers[i][0], combined_markers[i + 1][0]
-                max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
-                duration = end_time - start_time
-
-                # Capturer l'état actuel des cases à cocher
-                states = {
-                    'manualSwitch': 'on' if self.manualSwitchCheckBox.isChecked() else 'off',
-                    'ignition': 'on' if self.ignitionCheckBox.isChecked() else 'off',
-                    'fullPower': 'on' if self.fullPowerCheckBox.isChecked() else 'off',
-                    'lowBattery': 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-                }
-
-
-                sheet.append([states['manualSwitch'], states['ignition'], states['fullPower'], states['lowBattery'], max_power, duration])
-
-            img = Image(imagepath)
-            sheet.add_image(img, 'G5')
-
-            workbook.save(filepath)
-            print(f"Fichier Excel '{filepath}' créé avec succès.")
-
-        except Exception as e:
-            QMessageBox.warning(self, "Erreur", f"Erreur lors de la création du fichier Excel: {e}")
+        # Sauvegarde du fichier Excel
+        wb.save(self.excel_filepath)
 
     def start_measurement(self):
-        """Démarre la mesure de la consommation."""
-        modulename = self.moduleNameLineEdit.text().strip()
-        if not modulename:
-            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de commencer.")
+        """Démarre la mesure et initialise les fichiers CSV et Excel."""
+        filename = self.fileNameLineEdit.text()
+        self.csv_filepath = f"{filename}.csv"
+        self.excel_filepath = f"{filename}.xlsx"
+
+        # Initialisation du fichier CSV
+        with open(self.csv_filepath, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
+
+        # Initialisation du fichier Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
+        wb.save(self.excel_filepath)
+
+        self.timer.start(1000)  # Démarrer le timer pour mettre à jour le graphique toutes les secondes
+
+    def generate_report(self):
+        """Génère le rapport à partir des fichiers CSV et Excel."""
+        if not hasattr(self, 'csv_filepath'):
+            QMessageBox.warning(self, "Erreur", "Le fichier de données n'existe pas.")
             return
-        
-        self.start_time = QtCore.QTime.currentTime()  # Réinitialise l'heure de départ
-        self.power_values.clear()
-        self.time_values.clear()
-        self.init_data()  # Réinitialise les marqueurs et les données
 
-        self.timer.start(1000)  # Commence la mise à jour du graphique toutes les secondes
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Consumption Data"
 
-if __name__ == '__main__':
+        # Copier les données CSV dans Excel
+        with open(self.csv_filepath, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                ws.append(row)
+
+        # Ajout des marqueurs à un autre onglet
+        ws_markers = wb.create_sheet(title="Markers")
+        ws_markers.append(["Marker", "State", "Time (s)"])
+        for marker_name, marker_data in self.markers.items():
+            for marker_time, state in zip(marker_data['times'], marker_data['state']):
+                ws_markers.append([marker_name, state, marker_time])
+
+        # Ajout du graphique dans le rapport
+        img = Image(self.graph_image_path)
+        ws.add_image(img, 'H10')
+
+        # Sauvegarder le fichier Excel
+        wb.save(self.excel_filepath)
+        QMessageBox.information(self, "Succès", f"Rapport généré: {self.excel_filepath}")
+
+# Application
+def main():
     app = QApplication(sys.argv)
-    main_window = MainApp()
-    main_window.show()
+    window = MainApp()
+    window.show()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
