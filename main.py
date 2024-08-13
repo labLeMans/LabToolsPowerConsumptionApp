@@ -236,34 +236,78 @@ class MainApp(QMainWindow):
     
         # Démarrer le timer pour mettre à jour le graphique toutes les secondes
         self.timer.start(1000)
-
-
+    
+    def detect_changes(self):
+        """Détecte les changements d'état et calcule le temps écoulé et la puissance maximale."""
+        changes = []
+        last_states = {
+            'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+            'ignition': self.ignitionCheckBox.isChecked(),
+            'fullPower': self.fullPowerCheckBox.isChecked(),
+            'lowBattery': self.lowBatteryCheckBox.isChecked()
+        }
+        last_time = 0
+        max_power = float('-inf')
+    
+        for i in range(len(self.time_values)):
+            current_time = self.time_values[i]
+            current_power = self.power_values[i]
+    
+            # Mettre à jour la puissance maximale si nécessaire
+            if current_time >= last_time:
+                max_power = max(max_power, current_power)
+            
+            current_states = {
+                'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+                'ignition': self.ignitionCheckBox.isChecked(),
+                'fullPower': self.fullPowerCheckBox.isChecked(),
+                'lowBattery': self.lowBatteryCheckBox.isChecked()
+            }
+    
+            # Vérifier les changements d'état
+            if any(last_states[signal] != current_states[signal] for signal in last_states):
+                elapsed_time = current_time - last_time
+                changes.append([
+                    ' '.join([f"{signal}: {'On' if current_states[signal] else 'Off'}" for signal in last_states]),
+                    ' '.join([f"{signal}: {'On' if last_states[signal] else 'Off'}" for signal in last_states]),
+                    f"{elapsed_time:.2f}",
+                    f"{max_power:.2f}",
+                    f"{current_time:.2f}"
+                ])
+                # Réinitialiser les valeurs
+                last_time = current_time
+                max_power = float('-inf')
+                last_states = current_states
+    
+        return changes
     def generate_report(self):
-        """Génère le rapport à partir des fichiers CSV et Excel."""
+        """Génère le rapport à partir des changements d'état des signaux."""
         if not hasattr(self, 'csv_filepath'):
             QMessageBox.warning(self, "Erreur", "Le fichier de données n'existe pas.")
             return
-
+    
         # Sauvegarder le graphique en tant qu'image
         self.save_graph_as_image()
-
+    
         wb = Workbook()
         ws = wb.active
-        ws.title = "Consumption Data"
-
-        # Copier les données CSV dans Excel
-        with open(self.csv_filepath, 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                ws.append(row)
-
-        # Ajout des marqueurs à un autre onglet
-        ws_markers = wb.create_sheet(title="Markers")
-        ws_markers.append(["Marker", "State", "Time (s)"])
-        for marker_name, marker_data in self.markers.items():
-            for marker_time, state in zip(marker_data['times'], marker_data['state']):
-                ws_markers.append([marker_name, state, marker_time])
-
+        ws.title = "State Changes"
+    
+        # Ajouter les en-têtes à la feuille "State Changes"
+        ws.append(["Signal States", "Previous States", "Elapsed Time (s)", "Max Power (W)", "Time (s)"])
+    
+        # Filtrer et ajouter uniquement les changements d'état
+        changes = self.detect_changes()
+        for change in changes:
+            ws.append(change)
+    
+        # Ajout du graphique dans le rapport
+        if os.path.exists(self.graph_image_filepath):
+            img = Image(self.graph_image_filepath)
+            ws.add_image(img, 'F10')
+        else:
+            QMessageBox.warning(self, "Erreur", "L'image du graphique n'a pas été trouvée.")
+    
         # Sauvegarder le fichier Excel
         wb.save(self.excel_filepath)
         QMessageBox.information(self, "Succès", f"Rapport généré: {self.excel_filepath}")
