@@ -240,7 +240,7 @@ class MainApp(QMainWindow):
     def generate_report(self):
         """Génère un rapport avec un graphique."""
         if not hasattr(self, 'graph_image_filepath'):
-            QMessageBox.warning(self, "Erreur", "Le chemin du fichier pour le graphique n'est pas défini.")
+            QMessageBox.warning(self, "Erreur", "Veuillez commencer la mesure avant de générer le rapport.")
             return
 
         self.canvas.figure.savefig(self.graph_image_filepath)
