@@ -91,6 +91,14 @@ class MainApp(QMainWindow):
         self.graph_window.showFullScreen()
         self.update_graph_in_window(self.graph_window.canvas)
 
+    
+    def update_graph_in_window(self, canvas):
+        """Met à jour le graphique dans la fenêtre de graphique en plein écran."""
+        canvas.axes.clear()
+        canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
+        self.update_markers_on_canvas(canvas.axes)
+        canvas.draw()
+
     def add_marker(self, marker_name):
         """Ajoute un marqueur au moment actuel."""
         elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
