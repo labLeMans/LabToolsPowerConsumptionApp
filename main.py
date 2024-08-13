@@ -120,9 +120,10 @@ class MainApp(QMainWindow):
             self.update_graph_in_window(self.graph_window.canvas)
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage
 
-            # Ajouter les données au fichier CSV si le fichier CSV a été créé
+            # Ajouter les données au fichier CSV et Excel
             if hasattr(self, 'csv_filepath'):
                 self.update_csv(elapsed_time, power)
+                self.update_excel(elapsed_time, power)
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
@@ -159,17 +160,8 @@ class MainApp(QMainWindow):
             mid_time = (start_time + end_time) / 2
             axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", verticalalignment='bottom')
 
-    def update_graph_in_window(self, canvas):
-        """Met à jour le graphique dans la fenêtre donnée."""
-        canvas.axes.clear()
-        canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
-        canvas.axes.set_xlabel("Time (s)")
-        canvas.axes.set_ylabel("Power (W)")
-        self.update_markers_on_canvas(canvas.axes)
-        canvas.draw()
-
     def update_csv(self, elapsed_time, power):
-        """Met à jour le fichier CSV et Excel avec les données de consommation."""
+        """Met à jour le fichier CSV avec les données de consommation."""
         with open(self.csv_filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
 
@@ -182,43 +174,42 @@ class MainApp(QMainWindow):
             # Écrire la ligne dans le CSV
             writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
 
-        # Mettre à jour le fichier Excel également
-        if hasattr(self, 'excel_filepath'):
-            self.update_excel(elapsed_time, power)
-
     def update_excel(self, elapsed_time, power):
-        """Met à jour le fichier Excel avec les données."""
+        """Met à jour le fichier Excel avec les données de consommation."""
+        if not hasattr(self, 'excel_filepath'):
+            return
+
         wb = Workbook()
         ws = wb.active
-        ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-        
-        # Copie des données du CSV dans l'Excel
-        with open(self.csv_filepath, mode='r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                ws.append(row)
+        ws.title = "Consumption Data"
 
-        # Sauvegarde du fichier Excel
+        # Déterminer les états des switches
+        main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
+        ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
+        full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
+        low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
+
+        # Ajouter les données au fichier Excel
+        if os.path.exists(self.excel_filepath):
+            wb = Workbook(self.excel_filepath)
+            ws = wb.active
+        else:
+            ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
+
+        ws.append([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
         wb.save(self.excel_filepath)
 
     def start_measurement(self):
         """Démarre la mesure et initialise les fichiers CSV et Excel."""
-        # Récupération du nom du module
         filename = self.moduleNameLineEdit.text().strip()
-        
-        # Vérification si le nom du module est manquant
         if not filename:
             QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de démarrer la mesure.")
             return
         
-        # Construction du chemin du répertoire pour les fichiers
         path = "/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results"
         module_path = os.path.join(path, filename)
-        
-        # Créer le répertoire s'il n'existe pas déjà
         os.makedirs(module_path, exist_ok=True)
         
-        # Construction des chemins de fichier
         self.csv_filepath = os.path.join(module_path, f"{filename}.csv")
         self.excel_filepath = os.path.join(module_path, f"{filename}.xlsx")
         self.graph_image_filepath = os.path.join(module_path, f"{filename}.png")
@@ -234,7 +225,6 @@ class MainApp(QMainWindow):
         ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
         wb.save(self.excel_filepath)
     
-        # Démarrer le timer pour mettre à jour le graphique toutes les secondes
         self.timer.start(1000)
 
     def detect_state_changes(self):
@@ -245,7 +235,6 @@ class MainApp(QMainWindow):
         for current_time in self.time_values:
             current_states = {key: 'on' if getattr(self, f"{key}CheckBox").isChecked() else 'off' for key in self.markers.keys()}
             if any(current_states[key] != prev_states[key] for key in current_states):
-                # Calcul du temps écoulé et de la puissance maximale
                 if prev_states:
                     elapsed_time = current_time - prev_time
                     max_power = max(p for t, p in zip(self.time_values, self.power_values) if prev_time <= t <= current_time)
@@ -267,7 +256,6 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Erreur", "Veuillez cliquer sur start pour commencer la mesure.")
             return
 
-        # Sauvegarder le graphique en tant qu'image
         self.save_graph_as_image()
 
         wb = Workbook()
@@ -275,10 +263,11 @@ class MainApp(QMainWindow):
         ws.title = "Consumption Data"
 
         # Copier les données CSV dans Excel
-        with open(self.csv_filepath, 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                ws.append(row)
+        if os.path.exists(self.csv_filepath):
+            with open(self.csv_filepath, 'r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    ws.append(row)
 
         # Ajout des changements d'état à un autre onglet
         ws_changes = wb.create_sheet(title="State Changes")
@@ -301,9 +290,8 @@ class MainApp(QMainWindow):
     def save_graph_as_image(self):
         """Sauvegarde le graphique actuel en tant qu'image PNG."""
         if not hasattr(self, 'csv_filepath'):
-            return  # Assurez-vous que les fichiers sont initialisés avant de sauvegarder l'image
+            return
         
-        # Créez une image du graphique
         self.canvas.figure.savefig(self.graph_image_filepath, format='png')
 
 # Application
