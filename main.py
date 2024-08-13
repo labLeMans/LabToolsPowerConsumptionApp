@@ -108,9 +108,7 @@ class MainApp(QMainWindow):
             self.time_values.append(elapsed_time)
 
             # Garde seulement les 100000 dernières valeurs
-            if len(self.power_values) > 
-
-100000:
+            if len(self.power_values) > 100000:
                 self.power_values.pop(0)
                 self.time_values.pop(0)
 
@@ -240,48 +238,28 @@ class MainApp(QMainWindow):
         self.timer.start(1000)
 
     def detect_state_changes(self):
-        """Détecte les changements d'état des signaux et calcule les temps écoulés et la puissance maximale."""
-        changes = []
-        last_states = {
-            'manualSwitch': self.manualSwitchCheckBox.isChecked(),
-            'ignition': self.ignitionCheckBox.isChecked(),
-            'fullPower': self.fullPowerCheckBox.isChecked(),
-            'lowBattery': self.lowBatteryCheckBox.isChecked()
-        }
-        last_time = 0
-        max_power = float('-inf')
+        """Détecte les changements d'état et calcule les temps écoulés et la puissance maximale."""
+        state_changes = []
+        prev_states = {key: '' for key in self.markers.keys()}
+        prev_time = 0
+        for current_time in self.time_values:
+            current_states = {key: 'on' if getattr(self, f"{key}CheckBox").isChecked() else 'off' for key in self.markers.keys()}
+            if any(current_states[key] != prev_states[key] for key in current_states):
+                # Calcul du temps écoulé et de la puissance maximale
+                if prev_states:
+                    elapsed_time = current_time - prev_time
+                    max_power = max(p for t, p in zip(self.time_values, self.power_values) if prev_time <= t <= current_time)
+                    state_changes.append([
+                        ','.join([f"{key}: {prev_states[key]}" for key in prev_states]),
+                        ','.join([f"{key}: {current_states[key]}" for key in current_states]),
+                        f"{elapsed_time:.2f}",
+                        f"{max_power:.2f}",
+                        f"{current_time:.2f}"
+                    ])
+                prev_time = current_time
+                prev_states = current_states
 
-        for i in range(len(self.time_values)):
-            current_time = self.time_values[i]
-            current_power = self.power_values[i]
-
-            # Mettre à jour la puissance maximale si nécessaire
-            if current_time >= last_time:
-                max_power = max(max_power, current_power)
-            
-            current_states = {
-                'manualSwitch': self.manualSwitchCheckBox.isChecked(),
-                'ignition': self.ignitionCheckBox.isChecked(),
-                'fullPower': self.fullPowerCheckBox.isChecked(),
-                'lowBattery': self.lowBatteryCheckBox.isChecked()
-            }
-
-            # Vérifier les changements d'état
-            if any(last_states[signal] != current_states[signal] for signal in last_states):
-                elapsed_time = current_time - last_time
-                changes.append([
-                    ' | '.join([f"{signal}: {'On' if current_states[signal] else 'Off'}" for signal in last_states]),
-                    ' | '.join([f"{signal}: {'On' if last_states[signal] else 'Off'}" for signal in last_states]),
-                    f"{elapsed_time:.2f}",
-                    f"{max_power:.2f}",
-                    f"{current_time:.2f}"
-                ])
-                # Réinitialiser les valeurs
-                last_time = current_time
-                max_power = float('-inf')
-                last_states = current_states
-
-        return changes
+        return state_changes
 
     def generate_report(self):
         """Génère le rapport à partir des fichiers CSV et Excel."""
@@ -294,24 +272,27 @@ class MainApp(QMainWindow):
 
         wb = Workbook()
         ws = wb.active
-        ws.title = "State Changes"
+        ws.title = "Consumption Data"
 
-        # Ajouter les en-têtes à la feuille "State Changes"
-        ws.append(["Signal States", "Previous States", "Elapsed Time (s)", "Max Power (W)", "Time (s)"])
+        # Copier les données CSV dans Excel
+        with open(self.csv_filepath, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                ws.append(row)
 
-        # Filtrer et ajouter uniquement les changements d'état
+        # Ajout des changements d'état à un autre onglet
+        ws_changes = wb.create_sheet(title="State Changes")
+        ws_changes.append(["Previous States", "Current States", "Elapsed Time (s)", "Max Power (W)", "Time (s)"])
         changes = self.detect_state_changes()
         for change in changes:
-            ws.append(change)
+            ws_changes.append(change)
 
         # Ajout du graphique dans le rapport
         if os.path.exists(self.graph_image_filepath):
             img = Image(self.graph_image_filepath)
-            ws.add_image(img, 'F10')
+            ws.add_image(img, 'H10')
         else:
-            QMessageBox.warning(self, "Erreur", "L'image du
-
- graphique n'a pas été trouvée.")
+            QMessageBox.warning(self, "Erreur", "L'image du graphique n'a pas été trouvée.")
 
         # Sauvegarder le fichier Excel
         wb.save(self.excel_filepath)
