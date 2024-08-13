@@ -73,6 +73,13 @@ class MainApp(QMainWindow):
             'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['']}
         }
 
+        # Sauvegarde des états précédents des switches
+        self.previous_states = {
+            'manualSwitch': None,
+            'ignition': None,
+            'fullPower': None,
+            'lowBattery': None
+        }
         # Timer pour mettre à jour le graphique toutes les secondes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_graph)
@@ -113,24 +120,36 @@ class MainApp(QMainWindow):
             elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
             self.power_values.append(power)
             self.time_values.append(elapsed_time)
-
+    
             # Garde seulement les 100000 dernières valeurs
             if len(self.power_values) > 100000:
                 self.power_values.pop(0)
                 self.time_values.pop(0)
-
+    
             self.canvas.axes.clear()
             self.canvas.axes.plot(self.time_values, self.power_values, label='Power (W)')
             self.update_markers_on_canvas(self.canvas.axes)
             self.canvas.draw()
-
+    
             self.update_graph_in_window(self.graph_window.canvas)
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage
-
-            # Ajouter les données au fichier CSV et Excel
-            if hasattr(self, 'csv_filepath'):
-                self.update_csv(elapsed_time, power)
-                self.update_excel(elapsed_time, power)
+    
+            # Vérifier les changements d'état
+            current_states = {
+                'manualSwitch': self.manualSwitchCheckBox.isChecked(),
+                'ignition': self.ignitionCheckBox.isChecked(),
+                'fullPower': self.fullPowerCheckBox.isChecked(),
+                'lowBattery': self.lowBatteryCheckBox.isChecked()
+            }
+    
+            if current_states != self.previous_states:
+                # Ajouter les données au fichier CSV et Excel seulement si un état a changé
+                if hasattr(self, 'csv_filepath'):
+                    self.update_csv(elapsed_time, power)
+                    self.update_excel(elapsed_time, power)
+    
+                # Mettre à jour les états précédents
+                self.previous_states = current_states
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
@@ -183,18 +202,20 @@ class MainApp(QMainWindow):
 
     def update_excel(self, elapsed_time, power):
         """Met à jour le fichier Excel avec les données de consommation."""
-        if not hasattr(self, 'excel_filepath') or self.excel_filepath is None:
+        if not hasattr(self, 'excel_filepath'):
             return
-
+    
+        # Charger le classeur existant ou en créer un nouveau
         if os.path.exists(self.excel_filepath):
-            wb = load_workbook(self.excel_filepath)
+            wb = Workbook(self.excel_filepath)
             ws = wb.active
         else:
             wb = Workbook()
             ws = wb.active
             ws.title = "Consumption Data"
             ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-
+    
+        # Ajouter la nouvelle ligne de données
         ws.append([
             'on' if self.manualSwitchCheckBox.isChecked() else 'off',
             'on' if self.ignitionCheckBox.isChecked() else 'off',
