@@ -243,45 +243,30 @@ class MainApp(QMainWindow):
         if not hasattr(self, 'csv_filepath'):
             QMessageBox.warning(self, "Erreur", "Le fichier de données n'existe pas.")
             return
-    
+
         # Sauvegarder le graphique en tant qu'image
         self.save_graph_as_image()
-    
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Consumption Data"
-    
+
         # Copier les données CSV dans Excel
         with open(self.csv_filepath, 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 ws.append(row)
-    
+
         # Ajout des marqueurs à un autre onglet
         ws_markers = wb.create_sheet(title="Markers")
         ws_markers.append(["Marker", "State", "Time (s)"])
         for marker_name, marker_data in self.markers.items():
             for marker_time, state in zip(marker_data['times'], marker_data['state']):
                 ws_markers.append([marker_name, state, marker_time])
-    
-        # Ajout des changements d'état à un autre onglet
-        ws_changes = wb.create_sheet(title="State Changes")
-        ws_changes.append(["Signal", "Previous State", "Current State", "Elapsed Time (s)", "Time (s)"])
-        changes = self.detect_changes()
-        for change in changes:
-            ws_changes.append(change)
-    
-        # Ajout du graphique dans le rapport
-        if os.path.exists(self.graph_image_filepath):
-            img = Image(self.graph_image_filepath)
-            ws.add_image(img, 'H10')
-        else:
-            QMessageBox.warning(self, "Erreur", "L'image du graphique n'a pas été trouvée.")
-    
+
         # Sauvegarder le fichier Excel
         wb.save(self.excel_filepath)
         QMessageBox.information(self, "Succès", f"Rapport généré: {self.excel_filepath}")
-
 
     def save_graph_as_image(self):
         """Sauvegarde le graphique actuel en tant qu'image PNG."""
@@ -290,37 +275,6 @@ class MainApp(QMainWindow):
         
         # Créez une image du graphique
         self.canvas.figure.savefig(self.graph_image_filepath, format='png')
-
-    def detect_changes(self):
-        """Détecte les changements d'état et calcule le temps écoulé entre les changements."""
-        previous_states = {key: '' for key in self.markers.keys()}
-        changes = []
-    
-        for time, row in zip(self.time_values, self.read_csv()):
-            states = {
-                'manualSwitch': 'on' if self.manualSwitchCheckBox.isChecked() else 'off',
-                'ignition': 'on' if self.ignitionCheckBox.isChecked() else 'off',
-                'fullPower': 'on' if self.fullPowerCheckBox.isChecked() else 'off',
-                'lowBattery': 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-            }
-    
-            for key in states.keys():
-                if states[key] != previous_states[key]:
-                    if previous_states[key] != '':
-                        time_elapsed = time - self.previous_time
-                        changes.append([key, previous_states[key], states[key], f"{time_elapsed:.3f} s", f"{time:.3f} s"])
-                    previous_states[key] = states[key]
-                    self.previous_time = time
-    
-        return changes
-
-    def read_csv(self):
-        """Lit les données du fichier CSV pour la détection des changements."""
-        with open(self.csv_filepath, 'r') as file:
-            reader = csv.reader(file)
-            next(reader)  # Sauter l'en-tête
-            return [row for row in reader]
-
 
 
 # Application
