@@ -239,20 +239,45 @@ class MainApp(QMainWindow):
             combined_markers = [(t, l, s) for m in self.markers.values() for t, l, s in zip(m['times'], [m['label']] * len(m['times']), m['state'])]
             combined_markers.sort(key=lambda x: x[0])
     
+    
+        
+            print(f"Combined Markers: {combined_markers}")
+    
             for i in range(len(combined_markers) - 1):
+                print(f"Processing marker index {i}")  # Débug: affiche l'indice en cours de traitement
+                print(f"Marker Data: {combined_markers[i]}")  # Débug: affiche les données du marqueur actuel
+    
                 start_time, end_time = combined_markers[i][0], combined_markers[i + 1][0]
-                max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
+                print(f"Start time: {start_time}, End time: {end_time}")  # Débug: affiche les temps de début et de fin
+    
+                max_power = max((p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time), default=None)
+                print(f"Max Power between markers: {max_power}")  # Débug: affiche la puissance max entre les marqueurs
+    
+                if max_power is None:
+                    print("No power values found between these markers, skipping...")  # Débug: Cas où aucune valeur de puissance n'est trouvée
+                    continue
+    
                 duration = end_time - start_time
+                print(f"Duration between markers: {duration}")  # Débug: affiche la durée entre les marqueurs
     
-                # Utiliser les états capturés au moment des marqueurs
+                # Ajoutez les états des marqueurs
+                manual_switch_state = combined_markers[i][2] if len(combined_markers[i]) > 2 else ''
+                ignition_state = combined_markers[i][2] if len(combined_markers[i]) > 2 else ''
+                full_power_state = combined_markers[i][2] if len(combined_markers[i]) > 2 else ''
+                low_battery_state = combined_markers[i][2] if len(combined_markers[i]) > 2 else ''
+    
+                # Débug: affiche l'état actuel des marqueurs
+                print(f"States: manual_switch={manual_switch_state}, ignition={ignition_state}, full_power={full_power_state}, low_battery={low_battery_state}")
+    
                 sheet.append([
-                    combined_markers[i][2] if combined_markers[i][1] == 'M' else '',
-                    combined_markers[i][2] if combined_markers[i][1] == 'I' else '',
-                    combined_markers[i][2] if combined_markers[i][1] == 'F' else '',
-                    combined_markers[i][2] if combined_markers[i][1] == 'L' else '',
-                    max_power, duration
+                    manual_switch_state,
+                    ignition_state,
+                    full_power_state,
+                    low_battery_state,
+                    max_power,
+                    duration
                 ])
-    
+        
             img = Image(imagepath)
             sheet.add_image(img, 'G5')
     
