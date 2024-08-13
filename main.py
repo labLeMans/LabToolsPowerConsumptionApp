@@ -239,12 +239,14 @@ class MainApp(QMainWindow):
                 max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
                 duration = end_time - start_time
 
-                states = {name: 'off' for name in ['manualSwitch', 'ignition', 'fullPower', 'lowBattery']}
-                for t, l, s in combined_markers:
-                    if start_time <= t <= end_time:
-                        for name, marker in self.markers.items():
-                            if l == marker['label']:
-                                states[name] = s
+                # Capturer l'état actuel des cases à cocher
+                states = {
+                    'manualSwitch': 'on' if self.manualSwitchCheckBox.isChecked() else 'off',
+                    'ignition': 'on' if self.ignitionCheckBox.isChecked() else 'off',
+                    'fullPower': 'on' if self.fullPowerCheckBox.isChecked() else 'off',
+                    'lowBattery': 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
+                }
+
 
                 sheet.append([states['manualSwitch'], states['ignition'], states['fullPower'], states['lowBattery'], max_power, duration])
 
