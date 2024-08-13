@@ -168,20 +168,25 @@ class MainApp(QMainWindow):
         canvas.axes.set_ylabel("Power (W)")
         self.update_markers_on_canvas(canvas.axes)
         canvas.draw()
-
+    
     def update_csv(self, elapsed_time, power):
         """Met à jour le fichier CSV avec les données de consommation."""
         with open(self.csv_filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
-
-            # Déterminer les états des switches
-            main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
-            ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
-            full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
-            low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-
+    
+            # Utiliser les états capturés dans les marqueurs
+            last_marker_state = {name: state[-1] for name, state in self.markers.items()}
+    
             # Écrire la ligne dans le CSV
-            writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
+            writer.writerow([
+                last_marker_state['manualSwitch'], 
+                last_marker_state['ignition'], 
+                last_marker_state['fullPower'], 
+                last_marker_state['lowBattery'], 
+                f"{power:.2f} W", 
+                f"{elapsed_time:.3f} s"
+            ])
+
 
     def generate_report(self):
         """Génère les trois documents dans le répertoire results/{nom du module}."""
@@ -218,44 +223,42 @@ class MainApp(QMainWindow):
         try:
             filepath = os.path.join(directory, f"power_consumption_report_{modulename}.xlsx")
             imagepath = os.path.join(directory, f"power_consumption_graph_{modulename}.png")
-
+    
             # Créer le fichier Excel
             workbook = Workbook()
-
+    
             # Récupérer la feuille par défaut
             sheet = workbook.active
-
+    
             # Renommer la feuille par défaut
             sheet.title = "Max Power Data"
-
+    
             # Ajouter les en-têtes
             sheet.append(["Manual Switch", "Ignition", "Full Power", "Low Battery", "Max Power (W)", "Duration (s)"])
-
+    
             combined_markers = [(t, l, s) for m in self.markers.values() for t, l, s in zip(m['times'], [m['label']] * len(m['times']), m['state'])]
             combined_markers.sort(key=lambda x: x[0])
-
+    
             for i in range(len(combined_markers) - 1):
                 start_time, end_time = combined_markers[i][0], combined_markers[i + 1][0]
                 max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
                 duration = end_time - start_time
-
-                # Capturer l'état actuel des cases à cocher
-                states = {
-                    'manualSwitch': 'on' if self.manualSwitchCheckBox.isChecked() else 'off',
-                    'ignition': 'on' if self.ignitionCheckBox.isChecked() else 'off',
-                    'fullPower': 'on' if self.fullPowerCheckBox.isChecked() else 'off',
-                    'lowBattery': 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-                }
-
-
-                sheet.append([states['manualSwitch'], states['ignition'], states['fullPower'], states['lowBattery'], max_power, duration])
-
+    
+                # Utiliser les états capturés au moment des marqueurs
+                sheet.append([
+                    combined_markers[i][2] if combined_markers[i][1] == 'M' else '',
+                    combined_markers[i][2] if combined_markers[i][1] == 'I' else '',
+                    combined_markers[i][2] if combined_markers[i][1] == 'F' else '',
+                    combined_markers[i][2] if combined_markers[i][1] == 'L' else '',
+                    max_power, duration
+                ])
+    
             img = Image(imagepath)
             sheet.add_image(img, 'G5')
-
+    
             workbook.save(filepath)
             print(f"Fichier Excel '{filepath}' créé avec succès.")
-
+    
         except Exception as e:
             QMessageBox.warning(self, "Erreur", f"Erreur lors de la création du fichier Excel: {e}")
 
