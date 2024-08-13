@@ -203,9 +203,18 @@ class MainApp(QMainWindow):
 
     def start_measurement(self):
         """Démarre la mesure et initialise les fichiers CSV et Excel."""
-        filename = self.fileNameLineEdit.text()
-        self.csv_filepath = f"{filename}.csv"
-        self.excel_filepath = f"{filename}.xlsx"
+        # Récupération du nom du module
+        filename = self.moduleNameLineEdit.text()
+        # Vérificaiton si le nom du module est manquant
+        if not filename:
+            QMessageBox.warning(self, "Erreur", "Veuillez entre le nom du module avant de démarrer la mesure.")
+            return
+        
+        # Construction des chemins de fichier
+        path = "/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results"
+        self.csv_filepath = f"{path}/{filename}/{filename}.csv"
+        self.excel_filepath = f"{path}/{filename}/{filename}.xlsx"
+        self.graph_image_filepath = f"{path}/{filename}/{filename}.xlsx"
 
         # Initialisation du fichier CSV
         with open(self.csv_filepath, mode='w', newline='') as file:
@@ -244,7 +253,7 @@ class MainApp(QMainWindow):
                 ws_markers.append([marker_name, state, marker_time])
 
         # Ajout du graphique dans le rapport
-        img = Image(self.graph_image_path)
+        img = Image(self.graph_image_filepath)
         ws.add_image(img, 'H10')
 
         # Sauvegarder le fichier Excel
