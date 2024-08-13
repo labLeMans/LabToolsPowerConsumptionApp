@@ -112,7 +112,7 @@ class MainApp(QMainWindow):
         self.markers[marker_name]['times'].append(elapsed_time)
         self.markers[marker_name]['state'].append(state)
         self.update_graph()
-
+        
     def update_graph(self):
         """Récupère la puissance et met à jour le graphique."""
         power = self.fetch_power_value()
@@ -134,6 +134,10 @@ class MainApp(QMainWindow):
             self.update_graph_in_window(self.graph_window.canvas)
             self.power_updated.emit(power)  # Émettre le signal pour mettre à jour l'affichage
     
+            # Toujours ajouter les données au fichier CSV (chaque seconde)
+            if hasattr(self, 'csv_filepath'):
+                self.update_csv(elapsed_time, power)
+    
             # Vérifier les changements d'état
             current_states = {
                 'manualSwitch': self.manualSwitchCheckBox.isChecked(),
@@ -143,13 +147,13 @@ class MainApp(QMainWindow):
             }
     
             if current_states != self.previous_states:
-                # Ajouter les données au fichier CSV et Excel seulement si un état a changé
-                if hasattr(self, 'csv_filepath'):
-                    self.update_csv(elapsed_time, power)
+                # Ajouter les données au fichier Excel seulement si un état a changé
+                if hasattr(self, 'excel_filepath'):
                     self.update_excel(elapsed_time, power)
     
                 # Mettre à jour les états précédents
                 self.previous_states = current_states
+
 
     def fetch_power_value(self):
         """Récupère la valeur de puissance actuelle depuis l'URL."""
@@ -185,29 +189,29 @@ class MainApp(QMainWindow):
             max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
             mid_time = (start_time + end_time) / 2
             axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", verticalalignment='bottom')
-
+            
     def update_csv(self, elapsed_time, power):
-        """Met à jour le fichier CSV avec les données de consommation."""
+        """Met à jour le fichier CSV avec les données de consommation chaque seconde."""
         with open(self.csv_filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
-
+    
             # Déterminer les états des switches
             main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
             ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
             full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
             low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-
+    
             # Écrire la ligne dans le CSV
             writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
-
+    
     def update_excel(self, elapsed_time, power):
-        """Met à jour le fichier Excel avec les données de consommation."""
+        """Met à jour le fichier Excel avec les données de consommation uniquement lors d'un changement d'état."""
         if not hasattr(self, 'excel_filepath'):
             return
     
         # Charger le classeur existant ou en créer un nouveau
         if os.path.exists(self.excel_filepath):
-            wb = Workbook(self.excel_filepath)
+            wb = load_workbook(self.excel_filepath)
             ws = wb.active
         else:
             wb = Workbook()
@@ -225,6 +229,7 @@ class MainApp(QMainWindow):
             f"{elapsed_time:.3f} s"
         ])
         wb.save(self.excel_filepath)
+
 
     def generate_report(self):
         """Génère un rapport avec un graphique."""
