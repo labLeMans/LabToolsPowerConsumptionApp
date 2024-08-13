@@ -204,30 +204,39 @@ class MainApp(QMainWindow):
     def start_measurement(self):
         """Démarre la mesure et initialise les fichiers CSV et Excel."""
         # Récupération du nom du module
-        filename = self.moduleNameLineEdit.text()
-        # Vérificaiton si le nom du module est manquant
+        filename = self.moduleNameLineEdit.text().strip()
+        
+        # Vérification si le nom du module est manquant
         if not filename:
-            QMessageBox.warning(self, "Erreur", "Veuillez entre le nom du module avant de démarrer la mesure.")
+            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de démarrer la mesure.")
             return
         
-        # Construction des chemins de fichier
+        # Construction du chemin du répertoire pour les fichiers
         path = "/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results"
-        self.csv_filepath = f"{path}/{filename}/{filename}.csv"
-        self.excel_filepath = f"{path}/{filename}/{filename}.xlsx"
-        self.graph_image_filepath = f"{path}/{filename}/{filename}.xlsx"
-
+        module_path = os.path.join(path, filename)
+        
+        # Créer le répertoire s'il n'existe pas déjà
+        os.makedirs(module_path, exist_ok=True)
+        
+        # Construction des chemins de fichier
+        self.csv_filepath = os.path.join(module_path, f"{filename}.csv")
+        self.excel_filepath = os.path.join(module_path, f"{filename}.xlsx")
+        self.graph_image_filepath = os.path.join(module_path, f"{filename}.png")
+    
         # Initialisation du fichier CSV
         with open(self.csv_filepath, mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-
+    
         # Initialisation du fichier Excel
         wb = Workbook()
         ws = wb.active
         ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
         wb.save(self.excel_filepath)
+    
+        # Démarrer le timer pour mettre à jour le graphique toutes les secondes
+        self.timer.start(1000)
 
-        self.timer.start(1000)  # Démarrer le timer pour mettre à jour le graphique toutes les secondes
 
     def generate_report(self):
         """Génère le rapport à partir des fichiers CSV et Excel."""
