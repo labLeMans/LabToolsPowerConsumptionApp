@@ -244,6 +244,9 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Erreur", "Le fichier de données n'existe pas.")
             return
 
+        # Sauvegarder le graphique en tant qu'image
+        self.save_graph_as_image()
+
         wb = Workbook()
         ws = wb.active
         ws.title = "Consumption Data"
@@ -262,12 +265,25 @@ class MainApp(QMainWindow):
                 ws_markers.append([marker_name, state, marker_time])
 
         # Ajout du graphique dans le rapport
-        img = Image(self.graph_image_filepath)
-        ws.add_image(img, 'H10')
+        if os.path.exists(self.graph_image_filepath):
+            img = Image(self.graph_image_filepath)
+            ws.add_image(img, 'H10')
+        else:
+            QMessageBox.warning(self, "Erreur", "L'image du graphique n'a pas été trouvée.")
+
 
         # Sauvegarder le fichier Excel
         wb.save(self.excel_filepath)
         QMessageBox.information(self, "Succès", f"Rapport généré: {self.excel_filepath}")
+
+    def save_graph_as_image(self):
+        """Sauvegarde le graphique actuel en tant qu'image PNG."""
+        if not hasattr(self, 'csv_filepath'):
+            return  # Assurez-vous que les fichiers sont initialisés avant de sauvegarder l'image
+        
+        # Créez une image du graphique
+        self.canvas.figure.savefig(self.graph_image_filepath, format='png')
+
 
 # Application
 def main():
