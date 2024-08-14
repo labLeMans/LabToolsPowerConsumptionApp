@@ -70,6 +70,7 @@ class MainApp(QMainWindow):
         self.start_time = QtCore.QTime.currentTime()  # Heure de départ
         self.power_values = []  # Valeurs de puissance
         self.time_values = []  # Valeurs de temps
+        self.max_power = 0 # Initialisation de la puissance maximale
 
         # Dictionnaire pour stocker les marqueurs
         self.markers = {
@@ -118,6 +119,9 @@ class MainApp(QMainWindow):
         self.markers[marker_name]['times'].append(elapsed_time)
         self.markers[marker_name]['state'].append(state)
         self.update_graph()
+
+    def print_max_power(self, max_power):
+        print(f"Puissance maximale enregistrée:{self.max_power:.2f}W")
         
     def update_graph(self):
         """Récupère la puissance et met à jour le graphique."""
@@ -126,6 +130,9 @@ class MainApp(QMainWindow):
             elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
             self.power_values.append(power)
             self.time_values.append(elapsed_time)
+
+            # Mettre à jour la puissance maximale entre les changements d'état
+            self.max_power = max(self.max_power, power)
     
             # Garde seulement les 100000 dernières valeurs
             if len(self.power_values) > 100000:
@@ -153,9 +160,10 @@ class MainApp(QMainWindow):
             }
     
             if current_states != self.previous_states:
+                #self.print_max_power(self.max_power) # Debug
                 # Ajouter les données au fichier Excel seulement si un état a changé
                 if hasattr(self, 'excel_filepath'):
-                    self.update_excel(elapsed_time, power)
+                    self.update_excel(elapsed_time)
     
                 # Mettre à jour les états précédents
                 self.previous_states = current_states
@@ -210,7 +218,7 @@ class MainApp(QMainWindow):
             # Écrire la ligne dans le CSV
             writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
     
-    def update_excel(self, elapsed_time, power):
+    def update_excel(self, elapsed_time):
         """Met à jour le fichier Excel avec les données de consommation uniquement lors d'un changement d'état."""
         if not hasattr(self, 'excel_filepath'):
             return
@@ -231,16 +239,18 @@ class MainApp(QMainWindow):
             'on' if self.ignitionCheckBox.isChecked() else 'off',
             'on' if self.fullPowerCheckBox.isChecked() else 'off',
             'on' if self.lowBatteryCheckBox.isChecked() else 'off',
-            f"{power:.2f} W",
+            f"{self.max_power:.2f} W",
             f"{elapsed_time:.3f} s"
         ])
         wb.save(self.excel_filepath)
 
+        # Réinitialise max_power
+        self.max_power = 0
 
     def generate_report(self):
         """Génère un rapport avec un graphique."""
         if not hasattr(self, 'graph_image_filepath'):
-            QMessageBox.warning(self, "Erreur", "Veuillez commencer la mesure avant de générer le rapport.")
+            QMessageBox.warning(self, "Erreur", "Le chemin du fichier pour le graphique n'est pas défini.")
             return
 
         self.canvas.figure.savefig(self.graph_image_filepath)
