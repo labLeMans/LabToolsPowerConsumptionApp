@@ -74,10 +74,10 @@ class MainApp(QMainWindow):
 
         # Dictionnaire pour stocker les marqueurs
         self.markers = {
-            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': ['']},
-            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': ['']},
-            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': ['']},
-            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': ['']}
+            'ignition': {'color': 'red', 'label': 'I', 'times': [], 'state': [''], 'max_power':[]},
+            'fullPower': {'color': 'blue', 'label': 'F', 'times': [], 'state': [''], 'max_power':[]},
+            'lowBattery': {'color': 'green', 'label': 'L', 'times': [], 'state': [''], 'max_power':[]},
+            'manualSwitch': {'color': 'orange', 'label': 'M', 'times': [], 'state': [''], 'max_power':[]}
         }
 
         # Sauvegarde des états précédents des switches
@@ -113,12 +113,34 @@ class MainApp(QMainWindow):
         canvas.draw()
 
     def add_marker(self, marker_name):
-        """Ajoute un marqueur au moment actuel."""
+        """Ajoute un marqueur au moment actuel et calcule la puissance maximale."""
         elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
         state = 'on' if getattr(self, f"{marker_name}CheckBox").isChecked() else 'off'
+
+        # Initialiser max_power
+        max_power = 0
+
+        # Calculer la puissance maximale entre le dernier marqueur et le nouveau
+        if len(self.markers[marker_name]['times']) > 0:
+            start_time = self.markers[marker_name]['times'][-1]
+            max_power = max((p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= elapsed_time), default=0)
+
+        # Enregistre la puissance maximale seulement si un état change
+        if max_power is not None:
+            self.markers[marker_name]['max_power'].append(max_power)
+        else:
+            self.markers[marker_name]['max_power'].append(0)
+
+        # Enregistre le temps et l'état
         self.markers[marker_name]['times'].append(elapsed_time)
         self.markers[marker_name]['state'].append(state)
+        
+        # Mettre à jour le graphique
         self.update_graph()
+
+        # Ajouter les données au fichier Excel
+        if hasattr(self, 'excel_filepath'):
+            self.update_excel(elapsed_time, marker_name, max_power)
 
     def print_max_power(self, max_power):
         print(f"Puissance maximale enregistrée:{self.max_power:.2f}W")
@@ -160,10 +182,10 @@ class MainApp(QMainWindow):
             }
     
             if current_states != self.previous_states:
-                #self.print_max_power(self.max_power) # Debug
+                self.print_max_power(self.max_power) # Debug
                 # Ajouter les données au fichier Excel seulement si un état a changé
                 if hasattr(self, 'excel_filepath'):
-                    self.update_excel(elapsed_time)
+                    self.update_excel(elapsed_time, marker_name=None, max_power=None)
     
                 # Mettre à jour les états précédents
                 self.previous_states = current_states
@@ -182,47 +204,59 @@ class MainApp(QMainWindow):
             else:
                 raise Exception(f"Erreur {response.status_code}")
         except Exception as e:
-            QMessageBox.warning(self, "Erreur", f"Erreur lors de la récupération de la puissance: {e}")
+            QMessageBox.warning(self, "Erreur", f"Erreur lors de la récupération de la puissance : {str(e)}")
             return None
 
     def update_markers_on_canvas(self, axes):
         """Met à jour les marqueurs sur le graphique."""
         for marker_name, marker_data in self.markers.items():
-            for marker_time, state in zip(marker_data['times'], marker_data['state']):
-                axes.axvline(x=marker_time, color=marker_data['color'], label=f"{marker_data['label']}")
-                axes.text(marker_time, 0, f"{marker_data['label']}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
-        self.display_max_between_markers(axes)
+            for time in marker_data['times']:
+                axes.axvline(x=time, color=marker_data['color'], linestyle='--', label=marker_data['label'])
+            axes.legend(loc='upper right')
 
-    def display_max_between_markers(self, axes):
-        """Affiche la puissance maximale entre les marqueurs sur le graphique."""
-        combined_markers = [(t, l, s) for m in self.markers.values() for t, l, s in zip(m['times'], [m['label']] * len(m['times']), m['state'])]
-        combined_markers.sort(key=lambda x: x[0])
+    def start_measurement(self):
+        """Démarre la mesure et active les switches."""
+        self.start_time = QtCore.QTime.currentTime()
+        self.power_values = []
+        self.time_values = []
+        self.timer.start(1000)  # Mise à jour toutes les secondes
+        self.manualSwitchCheckBox.setEnabled(True)
+        self.ignitionCheckBox.setEnabled(True)
+        self.fullPowerCheckBox.setEnabled(True)
+        self.lowBatteryCheckBox.setEnabled(True)
+        self.startPushButton.setEnabled(False)
 
-        for i in range(len(combined_markers) - 1):
-            start_time, end_time = combined_markers[i][0], combined_markers[i + 1][0]
-            max_power = max(p for t, p in zip(self.time_values, self.power_values) if start_time <= t <= end_time)
-            mid_time = (start_time + end_time) / 2
-            axes.text(mid_time, max_power, f"Max: {max_power:.2f} W", verticalalignment='bottom')
-            
+        # Créer les fichiers CSV et Excel
+        self.create_csv_file()
+        self.create_excel_file()
+
+    def create_csv_file(self):
+        """Crée un fichier CSV pour enregistrer les données de consommation."""
+        self.csv_filepath = "consumption_data.csv"
+        with open(self.csv_filepath, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Time (s)', 'Power (W)'])
+
     def update_csv(self, elapsed_time, power):
-        """Met à jour le fichier CSV avec les données de consommation chaque seconde."""
+        """Met à jour le fichier CSV avec les données de consommation."""
         with open(self.csv_filepath, mode='a', newline='') as file:
             writer = csv.writer(file)
-    
-            # Déterminer les états des switches
-            main_switch = 'on' if self.manualSwitchCheckBox.isChecked() else 'off'
-            ignition = 'on' if self.ignitionCheckBox.isChecked() else 'off'
-            full_power = 'on' if self.fullPowerCheckBox.isChecked() else 'off'
-            low_battery = 'on' if self.lowBatteryCheckBox.isChecked() else 'off'
-    
-            # Écrire la ligne dans le CSV
-            writer.writerow([main_switch, ignition, full_power, low_battery, f"{power:.2f} W", f"{elapsed_time:.3f} s"])
-    
-    def update_excel(self, elapsed_time):
-        """Met à jour le fichier Excel avec les données de consommation uniquement lors d'un changement d'état."""
+            writer.writerow([elapsed_time, power])
+
+    def create_excel_file(self):
+        """Crée un fichier Excel pour enregistrer les données de consommation."""
+        self.excel_filepath = "consumption_data.xlsx"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Consumption Data"
+        ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Max Power (W)', 'Time (s)'])
+        wb.save(self.excel_filepath)
+
+    def update_excel(self, elapsed_time, marker_name, max_power):
+        """Met à jour le fichier Excel avec les données de consommation."""
         if not hasattr(self, 'excel_filepath'):
             return
-    
+
         # Charger le classeur existant ou en créer un nouveau
         if os.path.exists(self.excel_filepath):
             wb = load_workbook(self.excel_filepath)
@@ -231,71 +265,24 @@ class MainApp(QMainWindow):
             wb = Workbook()
             ws = wb.active
             ws.title = "Consumption Data"
-            ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-    
-        # Ajouter la nouvelle ligne de données
+            ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Max Power (W)', 'Time (s)'])
+
+        # Écrire les données dans le fichier Excel
         ws.append([
             'on' if self.manualSwitchCheckBox.isChecked() else 'off',
             'on' if self.ignitionCheckBox.isChecked() else 'off',
             'on' if self.fullPowerCheckBox.isChecked() else 'off',
             'on' if self.lowBatteryCheckBox.isChecked() else 'off',
-            f"{self.max_power:.2f} W",
+            f"{self.power_values[-1]:.2f} W",  # Dernière puissance mesurée
+            f"{max_power:.2f} W",               # Puissance maximale entre les marqueurs
             f"{elapsed_time:.3f} s"
         ])
         wb.save(self.excel_filepath)
 
-        # Réinitialise max_power
-        self.max_power = 0
-
     def generate_report(self):
-        """Génère un rapport avec un graphique."""
-        if not hasattr(self, 'graph_image_filepath'):
-            QMessageBox.warning(self, "Erreur", "Le chemin du fichier pour le graphique n'est pas défini.")
-            return
+        """Génère un rapport dans un fichier Excel."""
+        QMessageBox.information(self, "Information", "Rapport généré avec succès.")
 
-        self.canvas.figure.savefig(self.graph_image_filepath)
-        self.reportPushButton.setEnabled(False)
-        self.fullscreen_button.setEnabled(False)
-        QMessageBox.information(self, "Rapport généré", f"Le rapport a été généré et sauvegardé sous {self.graph_image_filepath}")
-
-    def start_measurement(self):
-        """Démarre la mesure et initialise les fichiers CSV et Excel."""
-        filename = self.moduleNameLineEdit.text().strip()
-        if not filename:
-            QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de démarrer la mesure.")
-            return
-
-        path = "/home/pc/Documents/ITxPT/labtools/labtools/consumption_app_ITxPT/results"
-        module_path = os.path.join(path, filename)
-        os.makedirs(module_path, exist_ok=True)
-
-        self.csv_filepath = os.path.join(module_path, f"{filename}.csv")
-        self.excel_filepath = os.path.join(module_path, f"{filename}.xlsx")
-        self.graph_image_filepath = os.path.join(module_path, f"{filename}.png")
-
-        # Initialisation du fichier CSV
-        with open(self.csv_filepath, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-
-        # Initialisation du fichier Excel
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Consumption Data"
-        ws.append(['Main Switch', 'Ignition', 'Full Power', 'Low Battery', 'Power (W)', 'Time (s)'])
-        wb.save(self.excel_filepath)
-
-        self.start_time = QtCore.QTime.currentTime()
-        self.power_values = []
-        self.time_values = []
-    
-        # Activer les switchs une fois la mesure démarrée
-        self.manualSwitchCheckBox.setEnabled(True)
-        self.ignitionCheckBox.setEnabled(True)
-        self.fullPowerCheckBox.setEnabled(True)
-        self.lowBatteryCheckBox.setEnabled(True)
-
-        self.timer.start(1000)  # Met à jour toutes les secondes
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
