@@ -175,7 +175,7 @@ class MainApp(QMainWindow):
                 #self.print_max_power(self.max_power) # Debug
                 # Ajouter les données au fichier Excel seulement si un état a changé
                 if hasattr(self, 'excel_filepath'):
-                    self.update_excel(elapsed_time, marker_name=None, max_power=None)
+                    self.update_excel(elapsed_time)
     
                 # Mettre à jour les états précédents
                 self.previous_states = current_states
@@ -256,7 +256,7 @@ class MainApp(QMainWindow):
         ])
         wb.save(self.excel_filepath)
 
-        # Réinitialise max_power
+        # Réinitialise max_power 
         self.max_power = 0
 
     def generate_report(self):
