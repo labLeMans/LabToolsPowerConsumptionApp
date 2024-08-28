@@ -41,7 +41,7 @@ class MainApp(QMainWindow):
 
     def init_ui(self):
         """Initialise l'interface utilisateur."""
-        uic.loadUi('/home/pc/Documents/ITxPT/consumption_app_ITxPT/wind.ui', self)
+        uic.loadUi('/home/pc/Documents/ITxPT/LabToolsPowerConsumptionApp/wind.ui', self)
 
         # Désactiver les switchs au démarrage
         self.manualSwitchCheckBox.setEnabled(False)
@@ -128,7 +128,6 @@ class MainApp(QMainWindow):
         """Formate le temps en heures, minutes, secondes."""
         hours, remainder = divmod(seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-
         if hours > 0:
             return f"{hours}h {minutes}m {seconds}s"
         elif minutes > 0:
@@ -140,10 +139,9 @@ class MainApp(QMainWindow):
         """Récupère la puissance et met à jour le graphique."""
         power = self.fetch_power_value()
         if power is not None:
-            elapsed_time_in_seconds = self.start_time.secsTo(QtCore.QTime.currentTime())
-            elspsed_time_str = self.format_time(elapsed_time_in_seconds)
+            elapsed_time = self.start_time.secsTo(QtCore.QTime.currentTime())
             self.power_values.append(power)
-            self.time_values.append(elapsed_time_in_seconds)
+            self.time_values.append(elapsed_time)
 
             # Mettre à jour la puissance maximale entre les changements d'état
             self.max_power = max(self.max_power, power)
@@ -163,7 +161,7 @@ class MainApp(QMainWindow):
     
             # Toujours ajouter les données au fichier CSV (chaque seconde)
             if hasattr(self, 'csv_filepath'):
-                self.update_csv(elapsed_time_in_seconds, power)
+                self.update_csv(elapsed_time, power)
     
             # Vérifier les changements d'état
             current_states = {
@@ -177,7 +175,7 @@ class MainApp(QMainWindow):
                 #self.print_max_power(self.max_power) # Debug
                 # Ajouter les données au fichier Excel seulement si un état a changé
                 if hasattr(self, 'excel_filepath'):
-                    self.update_excel(elspsed_time_str, marker_name=None, max_power=None)
+                    self.update_excel(elapsed_time, marker_name=None, max_power=None)
     
                 # Mettre à jour les états précédents
                 self.previous_states = current_states
@@ -204,7 +202,7 @@ class MainApp(QMainWindow):
         for marker_name, marker_data in self.markers.items():
             for marker_time, state in zip(marker_data['times'], marker_data['state']):
                 axes.axvline(x=marker_time, color=marker_data['color'], linestyle='--', label=f"{marker_data['label']}")
-                axes.text(marker_time, 0, f"{marker_time}s", f"{marker_data['label']}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
+                axes.text(marker_time, 0, f"{marker_data['label']}", color=marker_data['color'], rotation=90, verticalalignment='bottom')
         self.display_max_between_markers(axes)
 
     def display_max_between_markers(self, axes):
@@ -279,7 +277,7 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Erreur", "Veuillez entrer le nom du module avant de démarrer la mesure.")
             return
 
-        path = "/home/pc/Documents/ITxPT/consumption_app_ITxPT/results"
+        path = "/home/pc/Documents/ITxPT/LabToolsPowerConsumptionApp/results"
         module_path = os.path.join(path, filename)
         os.makedirs(module_path, exist_ok=True)
 
